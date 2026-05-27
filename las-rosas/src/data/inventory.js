@@ -67,6 +67,7 @@ export const INVENTORY_CATEGORIES = {
       'Alargador',
       'Televisor',
       'Calefactor',
+      'Cámara de seguridad',
       'Otro',
     ]
   },
@@ -88,6 +89,19 @@ export const INVENTORY_CATEGORIES = {
       'Manguera de incendio',
       'Gabinete de manguera',
       'Luz de emergencia',
+      'Cámara de seguridad',
+      'Otro',
+    ]
+  },
+  climatizacion: {
+    label: 'Climatización',
+    icon: '🌡',
+    items: [
+      'Calefactor',
+      'Termostato',
+      'Extractor de aire',
+      'Ventilador',
+      'Aire acondicionado',
       'Otro',
     ]
   },
