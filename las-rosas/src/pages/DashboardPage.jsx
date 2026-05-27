@@ -175,11 +175,33 @@ export default function DashboardPage() {
         position: 'sticky',
         top: 0,
         zIndex: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
-        <div style={{ fontSize: '16px', fontWeight: 600 }}>Dashboard</div>
-        <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
-          Fundación Las Rosas
+        <div>
+          <div style={{ fontSize: '16px', fontWeight: 600 }}>Dashboard</div>
+          <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
+            Fundación Las Rosas
+          </div>
         </div>
+        <button onClick={() => {
+          import('../utils/exportExcel').then(m => m.exportToExcel())
+        }} style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '8px 14px',
+          background: '#1D9E75',
+          color: 'white',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}>
+          📥 Excel
+        </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 24px' }}>
