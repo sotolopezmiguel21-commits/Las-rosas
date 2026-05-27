@@ -4,6 +4,7 @@ import SectorPage from './pages/SectorPage'
 import FormPage from './pages/FormPage'
 import DamagePage from './pages/DamagePage'
 import ResolvedPage from './pages/ResolvedPage'
+import DashboardPage from './pages/DashboardPage'
 
 export default function App() {
   const [view, setView] = useState('map')
@@ -29,6 +30,12 @@ export default function App() {
   }
 
   const isMapArea = ['map', 'sector', 'form', 'damage'].includes(view)
+
+  const NAV = [
+    { v: 'map',       icon: '🗺',  label: 'Mapa'      },
+    { v: 'dashboard', icon: '📊',  label: 'Dashboard' },
+    { v: 'resolved',  icon: '✅',  label: 'Arreglos'  },
+  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
@@ -69,28 +76,29 @@ export default function App() {
         <ResolvedPage onBack={() => setView('map')} />
       )}
 
+      {view === 'dashboard' && (
+        <DashboardPage />
+      )}
+
       {/* Bottom navigation */}
       <div style={{
         borderTop: '1px solid #eee',
         display: 'flex',
         justifyContent: 'center',
-        gap: '32px',
         padding: '10px 0 12px',
         background: 'white',
         position: 'sticky',
         bottom: 0,
         zIndex: 10,
       }}>
-        {[
-          { v: 'map',      icon: '🗺',  label: 'Mapa'     },
-          { v: 'resolved', icon: '✅',  label: 'Arreglos' },
-        ].map(t => {
+        {NAV.map(t => {
           const isActive = t.v === 'map' ? isMapArea : view === t.v
           return (
             <button key={t.v} onClick={() => {
               if (t.v === 'map') setSelectedSector(null)
               setView(t.v)
             }} style={{
+              flex: 1,
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -101,6 +109,7 @@ export default function App() {
               fontSize: '10px',
               fontWeight: isActive ? 600 : 400,
               color: isActive ? '#111' : '#aaa',
+              padding: '4px 0',
             }}>
               <span style={{ fontSize: '22px' }}>{t.icon}</span>
               {t.label}
