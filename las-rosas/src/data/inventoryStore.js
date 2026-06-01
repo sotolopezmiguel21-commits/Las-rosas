@@ -44,23 +44,33 @@ export const inventoryStore = {
       const key = `${item.category}__${item.name}`
       if (!summary[key]) {
         summary[key] = {
-          category: item.category,
+          category:      item.category,
           categoryLabel: item.categoryLabel,
-          categoryIcon: item.categoryIcon,
-          name: item.name,
-          detail: item.detail,
-          total: 0,
-          sectors: [],
+          categoryIcon:  item.categoryIcon,
+          name:          item.name,
+          detail:        item.detail,
+          total:         0,
+          damaged:       0,
+          sectors:       [],
         }
       }
       summary[key].total += item.quantity
       summary[key].sectors.push({
-        sectorId: item.sectorId,
+        sectorId:   item.sectorId,
         sectorName: item.sectorName,
-        quantity: item.quantity,
+        quantity:   item.quantity,
       })
     })
     return Object.values(summary)
+  },
+
+  updateDamagedCount: (summaryList, activeDamages) => {
+    return summaryList.map(item => {
+      const damaged = activeDamages.filter(
+        d => d.inventoryItemName === item.name
+      ).length
+      return { ...item, damaged }
+    })
   },
 }
 

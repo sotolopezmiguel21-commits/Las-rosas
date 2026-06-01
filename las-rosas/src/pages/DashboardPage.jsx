@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
-import { FLOORS, getAllSectors } from '../data/floors'
+import { getAllSectors } from '../data/floors'
 import { PRIORITY } from '../data/config'
 
 function StatCard({ label, value, color }) {
@@ -47,13 +47,6 @@ function BarChart({ value, max, color }) {
           transition: 'width 0.4s',
         }}/>
       </div>
-      <div style={{
-        fontSize: '12px',
-        fontWeight: 600,
-        color: '#444',
-        minWidth: '24px',
-        textAlign: 'right',
-      }}>{value}</div>
     </div>
   )
 }
@@ -86,7 +79,7 @@ export default function DashboardPage() {
   const active = damages.filter(d => d.status === 'active')
   const resolved = damages.filter(d => d.status === 'resolved')
 
-  // ── Estado general del hogar ──────────────────────────────
+  // Estado general
   const sectorsWithDamage = new Set(active.map(d => d.sectorId)).size
   const totalSectors = allSectors.length
   const sectorPct = totalSectors > 0
@@ -117,7 +110,7 @@ export default function DashboardPage() {
         ? '🟡 Estado regular'
         : '🔴 Requiere atención'
 
-  // ── Sectores más críticos ─────────────────────────────────
+  // Sectores críticos
   const sectorDamageCount = {}
   active.forEach(d => {
     sectorDamageCount[d.sectorId] = (sectorDamageCount[d.sectorId] || 0) + 1
@@ -134,10 +127,9 @@ export default function DashboardPage() {
           ? 'media'
           : 'baja',
     }))
-
   const maxSectorCount = topSectors[0]?.count || 1
 
-  // ── Daños por prioridad ───────────────────────────────────
+  // Prioridad
   const byPriority = {
     alta:  active.filter(d => d.priority === 'alta').length,
     media: active.filter(d => d.priority === 'media').length,
@@ -145,7 +137,7 @@ export default function DashboardPage() {
   }
   const maxPriority = Math.max(...Object.values(byPriority), 1)
 
-  // ── Elementos que más se dañan ────────────────────────────
+  // Elementos más dañados
   const elementDamageCount = {}
   active.forEach(d => {
     if (d.inventoryItemName) {
@@ -158,10 +150,11 @@ export default function DashboardPage() {
     .slice(0, 5)
   const maxElementCount = topElements[0]?.[1] || 1
 
-  // ── Inventario general ────────────────────────────────────
-  const inventorySummary = inventoryStore.getSummary()
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 8)
+  // Inventario resumen
+  const inventorySummary = inventoryStore.updateDamagedCount(
+    inventoryStore.getSummary(),
+    active
+  ).sort((a, b) => b.total - a.total).slice(0, 8)
   const maxInventory = inventorySummary[0]?.total || 1
 
   return (
@@ -206,7 +199,7 @@ export default function DashboardPage() {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 24px' }}>
 
-        {/* ── Estado general ── */}
+        {/* Estado general */}
         <div style={{
           background: 'white',
           border: '1px solid #eee',
@@ -221,16 +214,12 @@ export default function DashboardPage() {
             marginBottom: '12px',
           }}>
             <div>
-              <div style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: '#111',
-              }}>Estado general del hogar</div>
-              <div style={{
-                fontSize: '11px',
-                color: '#888',
-                marginTop: '2px',
-              }}>{statusLabel}</div>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#111' }}>
+                Estado general del hogar
+              </div>
+              <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
+                {statusLabel}
+              </div>
             </div>
             <div style={{
               fontSize: '32px',
@@ -240,7 +229,6 @@ export default function DashboardPage() {
             }}>{generalPct}%</div>
           </div>
 
-          {/* Progress bar */}
           <div style={{
             height: '10px',
             background: '#eee',
@@ -257,12 +245,7 @@ export default function DashboardPage() {
             }}/>
           </div>
 
-          {/* Sub stats */}
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap',
-          }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {[
               {
                 label: 'Sectores afectados',
@@ -284,53 +267,35 @@ export default function DashboardPage() {
                 borderRadius: '8px',
                 padding: '8px 10px',
               }}>
-                <div style={{
-                  fontSize: '11px',
-                  color: '#888',
-                  marginBottom: '2px',
-                }}>{s.label}</div>
-                <div style={{
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#333',
-                }}>{s.value}</div>
+                <div style={{ fontSize: '11px', color: '#888', marginBottom: '2px' }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#333' }}>
+                  {s.value}
+                </div>
                 {totalElements > 0 && (
-                  <div style={{
-                    fontSize: '10px',
-                    color: barColor,
-                    marginTop: '1px',
-                  }}>{s.pct}%</div>
+                  <div style={{ fontSize: '10px', color: barColor, marginTop: '1px' }}>
+                    {s.pct}%
+                  </div>
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Stats generales ── */}
+        {/* Resumen */}
         <SectionTitle>Resumen</SectionTitle>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
           gap: '8px',
         }}>
-          <StatCard
-            label="Daños activos"
-            value={active.length}
-            color="#E24B4A"
-          />
-          <StatCard
-            label="Resueltos"
-            value={resolved.length}
-            color="#1D9E75"
-          />
-          <StatCard
-            label="Elementos registrados"
-            value={totalElements}
-            color="#3B5FCC"
-          />
+          <StatCard label="Daños activos"          value={active.length}   color="#E24B4A" />
+          <StatCard label="Resueltos"              value={resolved.length} color="#1D9E75" />
+          <StatCard label="Elementos registrados"  value={totalElements}   color="#3B5FCC" />
         </div>
 
-        {/* ── Daños por prioridad ── */}
+        {/* Daños por prioridad */}
         <SectionTitle>Daños por prioridad</SectionTitle>
         <div style={{
           background: 'white',
@@ -361,8 +326,7 @@ export default function DashboardPage() {
                   flexShrink: 0,
                 }}>
                   <svg width="10" height="9" viewBox="0 0 10 9">
-                    <polygon points="5,0 10,9 0,9"
-                      fill={PRIORITY[key].color}/>
+                    <polygon points="5,0 10,9 0,9" fill={PRIORITY[key].color}/>
                   </svg>
                   <span style={{
                     fontSize: '12px',
@@ -371,11 +335,7 @@ export default function DashboardPage() {
                   }}>{PRIORITY[key].label}</span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <BarChart
-                    value={count}
-                    max={maxPriority}
-                    color={PRIORITY[key].color}
-                  />
+                  <BarChart value={count} max={maxPriority} color={PRIORITY[key].color} />
                 </div>
                 <div style={{
                   fontSize: '11px',
@@ -393,7 +353,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* ── Sectores más críticos ── */}
+        {/* Sectores críticos */}
         {topSectors.length > 0 && (
           <>
             <SectionTitle>Sectores más críticos</SectionTitle>
@@ -427,11 +387,7 @@ export default function DashboardPage() {
                     textOverflow: 'ellipsis',
                   }}>{sector?.name || 'Sector desconocido'}</div>
                   <div style={{ flex: 1 }}>
-                    <BarChart
-                      value={count}
-                      max={maxSectorCount}
-                      color={PRIORITY[alert].color}
-                    />
+                    <BarChart value={count} max={maxSectorCount} color={PRIORITY[alert].color} />
                   </div>
                 </div>
               ))}
@@ -439,7 +395,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* ── Elementos que más se dañan ── */}
+        {/* Elementos con más daños */}
         {topElements.length > 0 && (
           <>
             <SectionTitle>Elementos con más daños</SectionTitle>
@@ -464,77 +420,89 @@ export default function DashboardPage() {
                     color: '#222',
                   }}>{name}</div>
                   <div style={{ flex: 1 }}>
-                    <BarChart
-                      value={count}
-                      max={maxElementCount}
-                      color="#3B5FCC"
-                    />
+                    <BarChart value={count} max={maxElementCount} color="#E24B4A" />
                   </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* ── Inventario general ── */}
-        {inventorySummary.length > 0 && (
-          <>
-            <SectionTitle>Inventario general</SectionTitle>
-            <div style={{
-              background: 'white',
-              border: '1px solid #eee',
-              borderRadius: '12px',
-              padding: '12px 14px',
-            }}>
-              {inventorySummary.map(item => (
-                <div key={`${item.category}-${item.name}`} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '10px',
-                }}>
-                  <span style={{
-                    fontSize: '16px',
-                    flexShrink: 0,
-                  }}>{item.categoryIcon}</span>
                   <div style={{
                     fontSize: '12px',
-                    fontWeight: 500,
-                    width: '110px',
+                    fontWeight: 600,
+                    color: '#E24B4A',
                     flexShrink: 0,
-                    color: '#222',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>{item.name}</div>
-                  <div style={{ flex: 1 }}>
-                    <BarChart
-                      value={item.total}
-                      max={maxInventory}
-                      color="#3B5FCC"
-                    />
-                  </div>
+                  }}>{count}</div>
                 </div>
               ))}
             </div>
           </>
         )}
 
-        {inventorySummary.length === 0 && (
-          <>
-            <SectionTitle>Inventario general</SectionTitle>
-            <div style={{
-              background: 'white',
-              border: '1px solid #eee',
-              borderRadius: '12px',
-              padding: '24px',
-              textAlign: 'center',
-              color: '#aaa',
-              fontSize: '13px',
-            }}>
-              📦 Registra el inventario de los sectores para ver el resumen aquí
-            </div>
-          </>
+        {/* Inventario general */}
+        <SectionTitle>Inventario general</SectionTitle>
+        {inventorySummary.length === 0 ? (
+          <div style={{
+            background: 'white',
+            border: '1px solid #eee',
+            borderRadius: '12px',
+            padding: '24px',
+            textAlign: 'center',
+            color: '#aaa',
+            fontSize: '13px',
+          }}>
+            📦 Registra el inventario de los sectores para ver el resumen aquí
+          </div>
+        ) : (
+          <div style={{
+            background: 'white',
+            border: '1px solid #eee',
+            borderRadius: '12px',
+            padding: '12px 14px',
+          }}>
+            {inventorySummary.map(item => (
+              <div key={`${item.category}-${item.name}`} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '10px',
+              }}>
+                <span style={{ fontSize: '16px', flexShrink: 0 }}>
+                  {item.categoryIcon}
+                </span>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  width: '100px',
+                  flexShrink: 0,
+                  color: '#222',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}>{item.name}</div>
+                <div style={{ flex: 1 }}>
+                  <BarChart value={item.total} max={maxInventory} color="#3B5FCC" />
+                </div>
+                <div style={{
+                  display: 'flex',
+                  gap: '5px',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                }}>
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#3B5FCC',
+                  }}>{item.total}</span>
+                  {item.damaged > 0 && (
+                    <span style={{
+                      fontSize: '10px',
+                      color: '#E24B4A',
+                      fontWeight: 600,
+                      background: '#FCEBEB',
+                      borderRadius: '6px',
+                      padding: '1px 6px',
+                    }}>⚠️{item.damaged}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
       </div>
