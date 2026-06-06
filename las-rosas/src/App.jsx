@@ -11,7 +11,7 @@ import DashboardPage from './pages/DashboardPage'
 
 export default function App() {
   const [token, setToken] = useState(() =>
-    sessionStorage.getItem('gtoken') || null
+    localStorage.getItem('gtoken') || null
   )
   const [view, setView] = useState('map')
   const [selectedSector, setSelectedSector] = useState(null)
@@ -35,7 +35,7 @@ export default function App() {
   }, [token, loaded])
 
   const handleLogin = (accessToken) => {
-    sessionStorage.setItem('gtoken', accessToken)
+    localStorage.setItem('gtoken', accessToken)
     setAccessToken(accessToken)
     setToken(accessToken)
   }
