@@ -18,7 +18,9 @@ export default function App() {
   const [selectedFloor, setSelectedFloor] = useState(1)
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedDamage, setSelectedDamage] = useState(null)
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(() =>
+    sessionStorage.getItem('app_loaded') === 'true'
+  )
   const [tokenExpired, setTokenExpired] = useState(false)
 
   const {
@@ -29,27 +31,33 @@ export default function App() {
 
   // Load data when token is available
   useEffect(() => {
-    if (token && !loaded) {
-      // Check if token is older than 50 minutes
+    if (token) {
       const tokenTime = localStorage.getItem('gtoken_time')
       if (tokenTime) {
         const elapsed = Date.now() - Number(tokenTime)
         if (elapsed > 50 * 60 * 1000) {
           localStorage.removeItem('gtoken')
           localStorage.removeItem('gtoken_time')
+          sessionStorage.removeItem('app_loaded')
           setToken(null)
           setTokenExpired(true)
           return
         }
       }
       setAccessToken(token)
-      loadFromSheets().then(() => setLoaded(true))
+      if (!loaded) {
+        loadFromSheets().then(() => {
+          setLoaded(true)
+          sessionStorage.setItem('app_loaded', 'true')
+        })
+      }
     }
-  }, [token, loaded])
+  }, [token])
 
   const handleLogin = (accessToken) => {
     localStorage.setItem('gtoken', accessToken)
     localStorage.setItem('gtoken_time', Date.now().toString())
+    sessionStorage.removeItem('app_loaded')
     setAccessToken(accessToken)
     setToken(accessToken)
     setLoaded(false)
