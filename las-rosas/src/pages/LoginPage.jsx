@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { GOOGLE_CONFIG } from '../googleConfig'
 
-export default function LoginPage({ onLogin }) {
+export default function LoginPage({ onLogin, expired }) {
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://accounts.google.com/gsi/client'
@@ -69,9 +69,33 @@ export default function LoginPage({ onLogin }) {
       <div style={{
         fontSize: '12px',
         color: '#aaa',
-        marginBottom: '48px',
+        marginBottom: expired ? '24px' : '48px',
         textAlign: 'center',
       }}>Fundación Las Rosas</div>
+
+      {expired && (
+        <div style={{
+          background: '#FAEEDA',
+          border: '1px solid #EF9F27',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          marginBottom: '24px',
+          maxWidth: '320px',
+          width: '100%',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            color: '#BA7517',
+            marginBottom: '4px',
+          }}>⏱ Sesión expirada</div>
+          <div style={{
+            fontSize: '12px',
+            color: '#BA7517',
+          }}>Tus datos están guardados. Vuelve a ingresar para continuar.</div>
+        </div>
+      )}
 
       {/* Login button */}
       <button onClick={handleLogin} style={{

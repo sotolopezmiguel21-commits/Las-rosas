@@ -19,6 +19,7 @@ export default function App() {
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedDamage, setSelectedDamage] = useState(null)
   const [loaded, setLoaded] = useState(false)
+  const [tokenExpired, setTokenExpired] = useState(false)
 
   const {
     syncing, lastSync, error,
@@ -29,6 +30,18 @@ export default function App() {
   // Load data when token is available
   useEffect(() => {
     if (token && !loaded) {
+      // Check if token is older than 50 minutes
+      const tokenTime = localStorage.getItem('gtoken_time')
+      if (tokenTime) {
+        const elapsed = Date.now() - Number(tokenTime)
+        if (elapsed > 50 * 60 * 1000) {
+          localStorage.removeItem('gtoken')
+          localStorage.removeItem('gtoken_time')
+          setToken(null)
+          setTokenExpired(true)
+          return
+        }
+      }
       setAccessToken(token)
       loadFromSheets().then(() => setLoaded(true))
     }
@@ -36,8 +49,10 @@ export default function App() {
 
   const handleLogin = (accessToken) => {
     localStorage.setItem('gtoken', accessToken)
+    localStorage.setItem('gtoken_time', Date.now().toString())
     setAccessToken(accessToken)
     setToken(accessToken)
+    setLoaded(false)
   }
 
   const handleSectorSelect = (sector, floor) => {
@@ -66,7 +81,12 @@ export default function App() {
 
   // Not logged in
   if (!token) {
-    return <LoginPage onLogin={handleLogin} />
+    return (
+      <LoginPage
+        onLogin={handleLogin}
+        expired={tokenExpired}
+      />
+    )
   }
 
   // Loading
