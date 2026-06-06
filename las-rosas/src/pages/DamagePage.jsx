@@ -3,6 +3,7 @@ import { PRIORITY, SECTOR_TYPES } from '../data/config'
 import { damageStore } from '../data/store'
 import Header from '../components/Header'
 import AlertBadge from '../components/AlertBadge'
+import { compressImage } from '../utils/compressImage'
 
 export default function DamagePage({ damage, sector, onBack, onResolved }) {
   const [showResolve, setShowResolve] = useState(false)
@@ -191,11 +192,14 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
               accept="image/*"
               capture="environment"
               style={{ display: 'none' }}
-              onChange={e => {
+              onChange={async e => {
                 const file = e.target.files[0]
                 if (!file) return
                 const reader = new FileReader()
-                reader.onload = ev => setResolvePhoto(ev.target.result)
+                reader.onload = async ev => {
+                  const compressed = await compressImage(ev.target.result, 800, 0.5)
+                  setResolvePhoto(compressed)
+                }
                 reader.readAsDataURL(file)
               }}
             />

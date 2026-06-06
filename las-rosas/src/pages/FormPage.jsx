@@ -3,6 +3,7 @@ import { PRIORITY, SECTOR_TYPES } from '../data/config'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
 import Header from '../components/Header'
+import { compressImage } from '../utils/compressImage'
 
 export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
   const [form, setForm] = useState({
@@ -249,13 +250,14 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
             accept="image/*"
             capture="environment"
             style={{ display: 'none' }}
-            onChange={e => {
+            onChange={async e => {
               const file = e.target.files[0]
               if (!file) return
               const reader = new FileReader()
-              reader.onload = ev => setForm(f => ({
-                ...f, photo: ev.target.result
-              }))
+              reader.onload = async ev => {
+                const compressed = await compressImage(ev.target.result, 800, 0.5)
+                setForm(f => ({ ...f, photo: compressed }))
+              }
               reader.readAsDataURL(file)
             }}
           />
