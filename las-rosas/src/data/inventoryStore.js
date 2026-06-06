@@ -72,6 +72,11 @@ export const inventoryStore = {
       return { ...item, damaged }
     })
   },
+
+  loadFromSheets: (items) => {
+    _inventory = items
+    notify()
+  },
 }
 
 export function useInventory() {

@@ -24,8 +24,9 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
 
   const handleSave = () => {
     if (!form.description.trim()) return
-    damageStore.add({
-      sectorId: sector.id,
+    const damage = {
+      sectorId:          sector.id,
+      sectorName:        sector.name,
       floor,
       cell,
       description:       form.description,
@@ -35,12 +36,13 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
       photo:             form.photo,
       inventoryItemId:   form.inventoryItemId,
       inventoryItemName: form.inventoryItemName,
-      photoResolved: null,
-      dateCreated: new Date().toISOString().split('T')[0],
-      dateResolved: null,
-      status: 'active',
-    })
-    onSaved()
+      photoResolved:     null,
+      dateCreated:       new Date().toISOString().split('T')[0],
+      dateResolved:      null,
+      status:            'active',
+    }
+    const id = damageStore.add(damage)
+    onSaved({ ...damage, id })
   }
 
   const field = (label, key, placeholder) => (

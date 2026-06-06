@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { setAccessToken } from './services/googleSheets'
+import { useGoogleSync } from './services/useGoogleSync'
+import LoginPage from './pages/LoginPage'
 import MapPage from './pages/MapPage'
 import SectorPage from './pages/SectorPage'
 import FormPage from './pages/FormPage'
@@ -7,11 +10,35 @@ import ResolvedPage from './pages/ResolvedPage'
 import DashboardPage from './pages/DashboardPage'
 
 export default function App() {
+  const [token, setToken] = useState(() =>
+    sessionStorage.getItem('gtoken') || null
+  )
   const [view, setView] = useState('map')
   const [selectedSector, setSelectedSector] = useState(null)
   const [selectedFloor, setSelectedFloor] = useState(1)
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedDamage, setSelectedDamage] = useState(null)
+  const [loaded, setLoaded] = useState(false)
+
+  const {
+    syncing, lastSync, error,
+    loadFromSheets, saveDamage, resolveDamage,
+    saveInventoryItem, updateInventoryItem, deleteInventoryItem,
+  } = useGoogleSync()
+
+  // Load data when token is available
+  useEffect(() => {
+    if (token && !loaded) {
+      setAccessToken(token)
+      loadFromSheets().then(() => setLoaded(true))
+    }
+  }, [token, loaded])
+
+  const handleLogin = (accessToken) => {
+    sessionStorage.setItem('gtoken', accessToken)
+    setAccessToken(accessToken)
+    setToken(accessToken)
+  }
 
   const handleSectorSelect = (sector, floor) => {
     setSelectedSector(sector)
@@ -37,8 +64,60 @@ export default function App() {
     { v: 'resolved',  icon: '✅',  label: 'Arreglos'  },
   ]
 
+  // Not logged in
+  if (!token) {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
+  // Loading
+  if (!loaded) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100dvh',
+        gap: '16px',
+        background: 'white',
+      }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '3px solid #eee',
+          borderTop: '3px solid #3B5FCC',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }}/>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <div style={{ fontSize: '14px', color: '#888' }}>
+          {syncing ? 'Cargando datos...' : 'Conectando...'}
+        </div>
+        {error && (
+          <div style={{
+            fontSize: '12px',
+            color: '#E24B4A',
+            textAlign: 'center',
+            padding: '0 32px',
+          }}>{error}</div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+
+      {/* Sync indicator */}
+      {syncing && (
+        <div style={{
+          background: '#EEF4FF',
+          color: '#3B5FCC',
+          fontSize: '11px',
+          textAlign: 'center',
+          padding: '4px',
+        }}>Sincronizando...</div>
+      )}
 
       {view === 'map' && (
         <MapPage onSectorSelect={handleSectorSelect} />
@@ -59,7 +138,10 @@ export default function App() {
           floor={selectedFloor}
           cell={selectedCell}
           onBack={() => setView('sector')}
-          onSaved={() => setView('sector')}
+          onSaved={async (damage) => {
+            await saveDamage(damage)
+            setView('sector')
+          }}
         />
       )}
 
@@ -68,7 +150,10 @@ export default function App() {
           damage={selectedDamage}
           sector={selectedSector}
           onBack={() => setView('sector')}
-          onResolved={() => setView('sector')}
+          onResolved={async (damage) => {
+            await resolveDamage(damage)
+            setView('sector')
+          }}
         />
       )}
 

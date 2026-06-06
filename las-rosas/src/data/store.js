@@ -69,6 +69,11 @@ export const damageStore = {
     )
     notify()
   },
+
+  loadFromSheets: (damages) => {
+    _damages = damages
+    notify()
+  },
 }
 
 export function useDamages() {
