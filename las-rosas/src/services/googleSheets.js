@@ -114,3 +114,65 @@ export const initAllSheets = async () => {
   await initSheetHeaders(SHEETS.resolved,  DAMAGE_HEADERS)
   await initSheetHeaders(SHEETS.inventory, INVENTORY_HEADERS)
 }
+
+// ── UPLOAD PHOTO TO DRIVE ─────────────────────────────────
+export const uploadPhotoToDrive = async (base64, filename) => {
+  try {
+    // Convert base64 to blob
+    const base64Data = base64.split(',')[1]
+    const mimeType = base64.split(',')[0].split(':')[1].split(';')[0]
+    const byteCharacters = atob(base64Data)
+    const byteArrays = []
+    for (let i = 0; i < byteCharacters.length; i += 512) {
+      const slice = byteCharacters.slice(i, i + 512)
+      const byteNumbers = new Array(slice.length)
+      for (let j = 0; j < slice.length; j++) {
+        byteNumbers[j] = slice.charCodeAt(j)
+      }
+      byteArrays.push(new Uint8Array(byteNumbers))
+    }
+    const blob = new Blob(byteArrays, { type: mimeType })
+
+    // Upload to Drive
+    const metadata = {
+      name: filename,
+      parents: [],
+    }
+
+    const formData = new FormData()
+    formData.append('metadata', new Blob(
+      [JSON.stringify(metadata)],
+      { type: 'application/json' }
+    ))
+    formData.append('file', blob)
+
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${_accessToken}` },
+        body: formData,
+      }
+    )
+
+    const data = await res.json()
+
+    // Make file publicly viewable
+    await fetch(
+      `https://www.googleapis.com/drive/v3/files/${data.id}/permissions`,
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          role: 'reader',
+          type: 'anyone',
+        }),
+      }
+    )
+
+    return `https://drive.google.com/uc?id=${data.id}`
+  } catch (err) {
+    console.error('Error uploading photo:', err)
+    return null
+  }
+}

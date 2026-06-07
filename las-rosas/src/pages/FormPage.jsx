@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { PRIORITY, SECTOR_TYPES } from '../data/config'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
+import { uploadPhotoToDrive } from '../services/googleSheets'
 import Header from '../components/Header'
-import { compressImage } from '../utils/compressImage'
 
 export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
   const [form, setForm] = useState({
@@ -16,6 +16,7 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
     inventoryItemName: null,
   })
   const [sectorInventory, setSectorInventory] = useState([])
+  const [saving, setSaving] = useState(false)
   const fileRef = useRef()
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
 
@@ -23,27 +24,37 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
     setSectorInventory(inventoryStore.getBySector(sector.id))
   }, [sector.id])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.description.trim()) return
-    const damage = {
-      sectorId:          sector.id,
-      sectorName:        sector.name,
-      floor,
-      cell,
-      description:       form.description,
-      solution:          form.solution,
-      priority:          form.priority,
-      supplies:          form.supplies,
-      photo:             form.photo,
-      inventoryItemId:   form.inventoryItemId,
-      inventoryItemName: form.inventoryItemName,
-      photoResolved:     null,
-      dateCreated:       new Date().toISOString().split('T')[0],
-      dateResolved:      null,
-      status:            'active',
+    setSaving(true)
+    try {
+      let photoUrl = null
+      if (form.photo) {
+        const filename = `daño-${sector.id}-${Date.now()}.jpg`
+        photoUrl = await uploadPhotoToDrive(form.photo, filename)
+      }
+      const damage = {
+        sectorId:          sector.id,
+        sectorName:        sector.name,
+        floor,
+        cell,
+        description:       form.description,
+        solution:          form.solution,
+        priority:          form.priority,
+        supplies:          form.supplies,
+        photo:             photoUrl,
+        inventoryItemId:   form.inventoryItemId,
+        inventoryItemName: form.inventoryItemName,
+        photoResolved:     null,
+        dateCreated:       new Date().toISOString().split('T')[0],
+        dateResolved:      null,
+        status:            'active',
+      }
+      const id = damageStore.add(damage)
+      onSaved({ ...damage, id })
+    } finally {
+      setSaving(false)
     }
-    const id = damageStore.add(damage)
-    onSaved({ ...damage, id })
   }
 
   const field = (label, key, placeholder) => (
@@ -77,10 +88,7 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <Header
-        title="Registrar daño"
-        onBack={onBack}
-      />
+      <Header title="Registrar daño" onBack={onBack} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px' }}>
 
@@ -168,12 +176,7 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
                 marginLeft: '4px',
               }}>(opcional)</span>
             </div>
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '7px',
-            }}>
-              {/* None option */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
               <button
                 onClick={() => setForm(f => ({
                   ...f,
@@ -194,7 +197,6 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
                 }}>
                 Sin especificar
               </button>
-
               {sectorInventory.map(item => (
                 <button key={item.id}
                   onClick={() => setForm(f => ({
@@ -254,9 +256,8 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
               const file = e.target.files[0]
               if (!file) return
               const reader = new FileReader()
-              reader.onload = async ev => {
-                const compressed = await compressImage(ev.target.result, 800, 0.5)
-                setForm(f => ({ ...f, photo: compressed }))
+              reader.onload = ev => {
+                setForm(f => ({ ...f, photo: ev.target.result }))
               }
               reader.readAsDataURL(file)
             }}
@@ -297,19 +298,19 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
 
         {/* Save */}
         <button onClick={handleSave}
-          disabled={!form.description.trim()}
+          disabled={!form.description.trim() || saving}
           style={{
             width: '100%',
             padding: '14px',
-            background: form.description.trim() ? '#E24B4A' : '#eee',
-            color: form.description.trim() ? 'white' : '#aaa',
+            background: form.description.trim() && !saving ? '#E24B4A' : '#eee',
+            color: form.description.trim() && !saving ? 'white' : '#aaa',
             border: 'none',
             borderRadius: '12px',
             fontSize: '15px',
             fontWeight: 600,
-            cursor: form.description.trim() ? 'pointer' : 'default',
+            cursor: form.description.trim() && !saving ? 'pointer' : 'default',
           }}>
-          Registrar daño
+          {saving ? '⏳ Subiendo foto...' : 'Registrar daño'}
         </button>
 
       </div>
