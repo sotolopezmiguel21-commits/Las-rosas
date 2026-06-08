@@ -9,6 +9,8 @@ import DamagePage from './pages/DamagePage'
 import ResolvedPage from './pages/ResolvedPage'
 import DashboardPage from './pages/DashboardPage'
 
+onSaved
+
 export default function App() {
   const [token, setToken] = useState(() =>
     localStorage.getItem('gtoken') || null
@@ -167,7 +169,12 @@ export default function App() {
           cell={selectedCell}
           onBack={() => setView('sector')}
           onSaved={async (damage) => {
-            await saveDamage(damage)
+            try {
+              await saveDamage(damage)
+              alert('Guardado correctamente')
+            } catch (err) {
+              alert('Error: ' + err.message)
+            }
             setView('sector')
           }}
         />
