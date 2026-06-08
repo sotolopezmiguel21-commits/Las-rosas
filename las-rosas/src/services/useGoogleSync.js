@@ -56,8 +56,11 @@ export function useGoogleSync() {
         ? SHEETS.resolved
         : SHEETS.damages
       await appendRow(sheet, DAMAGE_HEADERS, damage)
+      setSyncing(false)
     } catch (err) {
-      setError('Error al guardar daño: ' + err.message)
+      const msg = 'Error al guardar daño: ' + err.message
+      setError(msg)
+      alert(msg)
     }
   }, [])
 
