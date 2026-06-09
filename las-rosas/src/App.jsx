@@ -9,8 +9,6 @@ import DamagePage from './pages/DamagePage'
 import ResolvedPage from './pages/ResolvedPage'
 import DashboardPage from './pages/DashboardPage'
 
-onSaved
-
 export default function App() {
   const [token, setToken] = useState(() =>
     localStorage.getItem('gtoken') || null
@@ -26,12 +24,10 @@ export default function App() {
   const [tokenExpired, setTokenExpired] = useState(false)
 
   const {
-    syncing, lastSync, error,
+    syncing, error,
     loadFromSheets, saveDamage, resolveDamage,
-    saveInventoryItem, updateInventoryItem, deleteInventoryItem,
   } = useGoogleSync()
 
-  // Load data when token is available
   useEffect(() => {
     if (token) {
       const tokenTime = localStorage.getItem('gtoken_time')
@@ -89,7 +85,6 @@ export default function App() {
     { v: 'resolved',  icon: '✅',  label: 'Arreglos'  },
   ]
 
-  // Not logged in
   if (!token) {
     return (
       <LoginPage
@@ -99,7 +94,6 @@ export default function App() {
     )
   }
 
-  // Loading
   if (!loaded) {
     return (
       <div style={{
@@ -138,7 +132,6 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
 
-      {/* Sync indicator */}
       {syncing && (
         <div style={{
           background: '#EEF4FF',
@@ -169,12 +162,7 @@ export default function App() {
           cell={selectedCell}
           onBack={() => setView('sector')}
           onSaved={async (damage) => {
-            try {
-              await saveDamage(damage)
-              alert('Guardado correctamente')
-            } catch (err) {
-              alert('Error: ' + err.message)
-            }
+            await saveDamage(damage)
             setView('sector')
           }}
         />
@@ -185,8 +173,8 @@ export default function App() {
           damage={selectedDamage}
           sector={selectedSector}
           onBack={() => setView('sector')}
-          onResolved={async (damage) => {
-            await resolveDamage(damage)
+          onResolved={async (resolvedDamage) => {
+            await resolveDamage(resolvedDamage)
             setView('sector')
           }}
         />
@@ -200,7 +188,6 @@ export default function App() {
         <DashboardPage />
       )}
 
-      {/* Bottom navigation */}
       <div style={{
         borderTop: '1px solid #eee',
         display: 'flex',
