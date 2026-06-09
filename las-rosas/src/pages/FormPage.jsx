@@ -51,7 +51,7 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
         status:            'active',
       }
       const id = damageStore.add(damage)
-      onSaved({ ...damage, id })
+      await onSaved({ ...damage, id })
     } finally {
       setSaving(false)
     }
