@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import {
   readSheet, appendRow, updateRow, clearRow,
   initAllSheets, DAMAGE_HEADERS, INVENTORY_HEADERS,
+  getAccessToken,
 } from './googleSheets'
 import { SHEETS } from '../googleConfig'
 import { damageStore } from '../data/store'
@@ -19,18 +20,15 @@ export function useGoogleSync() {
     try {
       await initAllSheets()
 
-      // Load active damages
-      const activeDamages = await readSheet(SHEETS.damages)
+      const activeDamages   = await readSheet(SHEETS.damages)
       const resolvedDamages = await readSheet(SHEETS.resolved)
       const allDamages = [
-        ...activeDamages.map(d => ({ ...d, status: 'active' })),
+        ...activeDamages.map(d  => ({ ...d, status: 'active'   })),
         ...resolvedDamages.map(d => ({ ...d, status: 'resolved' })),
       ]
 
-      // Load inventory
       const inventory = await readSheet(SHEETS.inventory)
 
-      // Update stores
       if (allDamages.length > 0) {
         damageStore.loadFromSheets(allDamages)
       }
@@ -52,22 +50,19 @@ export function useGoogleSync() {
   // ── SAVE DAMAGE ─────────────────────────────────────────
   const saveDamage = useCallback(async (damage) => {
     try {
-      const sheet = damage.status === 'resolved'
-        ? SHEETS.resolved
-        : SHEETS.damages
-      await appendRow(sheet, DAMAGE_HEADERS, damage)
-      setSyncing(false)
+      const token = getAccessToken()
+      alert('Token activo: ' + (token ? 'SÍ — ' + token.slice(0, 10) : 'NO'))
+      await appendRow(SHEETS.damages, DAMAGE_HEADERS, damage)
+      alert('✅ Daño guardado en Sheets')
     } catch (err) {
-      const msg = 'Error al guardar daño: ' + err.message
-      setError(msg)
-      alert(msg)
+      alert('❌ Error guardando daño: ' + err.message)
+      setError('Error al guardar daño: ' + err.message)
     }
   }, [])
 
   // ── RESOLVE DAMAGE ──────────────────────────────────────
   const resolveDamage = useCallback(async (damage) => {
     try {
-      // Get active damages to find row index
       const activeDamages = await readSheet(SHEETS.damages)
       const rowIndex = activeDamages.findIndex(d => d.id === damage.id)
       if (rowIndex !== -1) {
@@ -76,6 +71,7 @@ export function useGoogleSync() {
       await appendRow(SHEETS.resolved, DAMAGE_HEADERS, damage)
     } catch (err) {
       setError('Error al resolver daño: ' + err.message)
+      alert('❌ Error resolviendo daño: ' + err.message)
     }
   }, [])
 
@@ -85,6 +81,7 @@ export function useGoogleSync() {
       await appendRow(SHEETS.inventory, INVENTORY_HEADERS, item)
     } catch (err) {
       setError('Error al guardar inventario: ' + err.message)
+      alert('❌ Error guardando inventario: ' + err.message)
     }
   }, [])
 
@@ -98,6 +95,7 @@ export function useGoogleSync() {
       }
     } catch (err) {
       setError('Error al actualizar inventario: ' + err.message)
+      alert('❌ Error actualizando inventario: ' + err.message)
     }
   }, [])
 
@@ -111,6 +109,7 @@ export function useGoogleSync() {
       }
     } catch (err) {
       setError('Error al eliminar elemento: ' + err.message)
+      alert('❌ Error eliminando elemento: ' + err.message)
     }
   }, [])
 

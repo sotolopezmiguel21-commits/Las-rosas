@@ -42,14 +42,21 @@ export const readSheet = async (sheetName) => {
 // ── APPEND ────────────────────────────────────────────────
 export const appendRow = async (sheetName, headers, obj) => {
   const row = objToRow(headers, obj)
-  await fetch(
-    `${BASE}/${sid}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-    {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ values: [row] }),
-    }
-  )
+  const url = `${BASE}/${sid}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`
+  
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ values: [row] }),
+  })
+
+  const data = await res.json()
+  
+  if (!res.ok) {
+    throw new Error(`Sheets error ${res.status}: ${JSON.stringify(data)}`)
+  }
+  
+  return data
 }
 
 // ── UPDATE ────────────────────────────────────────────────
