@@ -63,7 +63,6 @@ export function useGoogleSync() {
         return
       }
       setError('Error al guardar daño: ' + err.message)
-      alert('❌ Error: ' + err.message)
     }
   }, [])
 
@@ -77,8 +76,14 @@ export function useGoogleSync() {
       }
       await appendRow(SHEETS.resolved, DAMAGE_HEADERS, damage)
     } catch (err) {
+      if (err.message.includes('401')) {
+        localStorage.removeItem('gtoken')
+        localStorage.removeItem('gtoken_time')
+        sessionStorage.removeItem('app_loaded')
+        window.location.reload()
+        return
+      }
       setError('Error al resolver daño: ' + err.message)
-      alert('❌ Error resolviendo daño: ' + err.message)
     }
   }, [])
 
@@ -88,7 +93,6 @@ export function useGoogleSync() {
       await appendRow(SHEETS.inventory, INVENTORY_HEADERS, item)
     } catch (err) {
       setError('Error al guardar inventario: ' + err.message)
-      alert('❌ Error guardando inventario: ' + err.message)
     }
   }, [])
 
@@ -102,7 +106,6 @@ export function useGoogleSync() {
       }
     } catch (err) {
       setError('Error al actualizar inventario: ' + err.message)
-      alert('❌ Error actualizando inventario: ' + err.message)
     }
   }, [])
 
@@ -116,7 +119,6 @@ export function useGoogleSync() {
       }
     } catch (err) {
       setError('Error al eliminar elemento: ' + err.message)
-      alert('❌ Error eliminando elemento: ' + err.message)
     }
   }, [])
 
