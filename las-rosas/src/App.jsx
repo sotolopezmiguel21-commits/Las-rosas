@@ -44,10 +44,18 @@ export default function App() {
       }
       setAccessToken(token)
       if (!loaded) {
-        loadFromSheets().then(() => {
-          setLoaded(true)
-          sessionStorage.setItem('app_loaded', 'true')
-        })
+        loadFromSheets()
+          .then(() => {
+            setLoaded(true)
+            sessionStorage.setItem('app_loaded', 'true')
+          })
+          .catch(() => {
+            localStorage.removeItem('gtoken')
+            localStorage.removeItem('gtoken_time')
+            sessionStorage.removeItem('app_loaded')
+            setToken(null)
+            setTokenExpired(true)
+          })
       }
     }
   }, [token])

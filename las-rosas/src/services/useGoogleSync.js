@@ -41,6 +41,9 @@ export function useGoogleSync() {
 
       setLastSync(new Date())
     } catch (err) {
+      if (err.message.includes('401')) {
+        throw err
+      }
       setError('Error al cargar datos: ' + err.message)
     } finally {
       setSyncing(false)
@@ -50,13 +53,17 @@ export function useGoogleSync() {
   // ── SAVE DAMAGE ─────────────────────────────────────────
   const saveDamage = useCallback(async (damage) => {
     try {
-      const token = getAccessToken()
-      alert('Token activo: ' + (token ? 'SÍ — ' + token.slice(0, 10) : 'NO'))
       await appendRow(SHEETS.damages, DAMAGE_HEADERS, damage)
-      alert('✅ Daño guardado en Sheets')
     } catch (err) {
-      alert('❌ Error guardando daño: ' + err.message)
+      if (err.message.includes('401')) {
+        localStorage.removeItem('gtoken')
+        localStorage.removeItem('gtoken_time')
+        sessionStorage.removeItem('app_loaded')
+        window.location.reload()
+        return
+      }
       setError('Error al guardar daño: ' + err.message)
+      alert('❌ Error: ' + err.message)
     }
   }, [])
 
