@@ -34,10 +34,7 @@ export default function App() {
       if (tokenTime) {
         const elapsed = Date.now() - Number(tokenTime)
         if (elapsed > 50 * 60 * 1000) {
-          localStorage.removeItem('gtoken')
-          localStorage.removeItem('gtoken_time')
-          sessionStorage.removeItem('app_loaded')
-          setToken(null)
+          handleLogout()
           setTokenExpired(true)
           return
         }
@@ -50,15 +47,20 @@ export default function App() {
             sessionStorage.setItem('app_loaded', 'true')
           })
           .catch(() => {
-            localStorage.removeItem('gtoken')
-            localStorage.removeItem('gtoken_time')
-            sessionStorage.removeItem('app_loaded')
-            setToken(null)
+            handleLogout()
             setTokenExpired(true)
           })
       }
     }
   }, [token])
+
+  const handleLogout = () => {
+    localStorage.removeItem('gtoken')
+    localStorage.removeItem('gtoken_time')
+    sessionStorage.removeItem('app_loaded')
+    setToken(null)
+    setLoaded(false)
+  }
 
   const handleLogin = (accessToken) => {
     localStorage.setItem('gtoken', accessToken)
@@ -67,6 +69,7 @@ export default function App() {
     setAccessToken(accessToken)
     setToken(accessToken)
     setLoaded(false)
+    setTokenExpired(false)
   }
 
   const handleSectorSelect = (sector, floor) => {
@@ -149,6 +152,24 @@ export default function App() {
           padding: '4px',
         }}>Sincronizando...</div>
       )}
+
+      {/* Botón logout */}
+      <div style={{
+        position: 'fixed',
+        top: '8px',
+        right: '8px',
+        zIndex: 999,
+      }}>
+        <button onClick={handleLogout} style={{
+          background: '#f5f5f3',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          padding: '4px 8px',
+          fontSize: '11px',
+          cursor: 'pointer',
+          color: '#888',
+        }}>↩ Salir</button>
+      </div>
 
       {view === 'map' && (
         <MapPage onSectorSelect={handleSectorSelect} />
