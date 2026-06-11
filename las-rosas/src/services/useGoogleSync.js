@@ -22,12 +22,17 @@ export function useGoogleSync() {
 
       const activeDamages   = await readSheet(SHEETS.damages)
       const resolvedDamages = await readSheet(SHEETS.resolved)
+      
+      console.log('Daños activos desde Sheets:', activeDamages)
+      console.log('Arreglos desde Sheets:', resolvedDamages)
+
       const allDamages = [
         ...activeDamages.map(d  => ({ ...d, status: 'active'   })),
         ...resolvedDamages.map(d => ({ ...d, status: 'resolved' })),
       ]
 
       const inventory = await readSheet(SHEETS.inventory)
+      console.log('Inventario desde Sheets:', inventory)
 
       if (allDamages.length > 0) {
         damageStore.loadFromSheets(allDamages)
@@ -45,6 +50,7 @@ export function useGoogleSync() {
         throw err
       }
       setError('Error al cargar datos: ' + err.message)
+      console.error('Error loadFromSheets:', err)
     } finally {
       setSyncing(false)
     }
