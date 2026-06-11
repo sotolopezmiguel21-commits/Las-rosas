@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-import { setAccessToken } from './services/googleSheets'
 import { useGoogleSync } from './services/useGoogleSync'
-import LoginPage from './pages/LoginPage'
 import MapPage from './pages/MapPage'
 import SectorPage from './pages/SectorPage'
 import FormPage from './pages/FormPage'
@@ -10,18 +8,12 @@ import ResolvedPage from './pages/ResolvedPage'
 import DashboardPage from './pages/DashboardPage'
 
 export default function App() {
-  const [token, setToken] = useState(() =>
-    localStorage.getItem('gtoken') || null
-  )
   const [view, setView] = useState('map')
   const [selectedSector, setSelectedSector] = useState(null)
   const [selectedFloor, setSelectedFloor] = useState(1)
   const [selectedCell, setSelectedCell] = useState(null)
   const [selectedDamage, setSelectedDamage] = useState(null)
-  const [loaded, setLoaded] = useState(() =>
-    sessionStorage.getItem('app_loaded') === 'true'
-  )
-  const [tokenExpired, setTokenExpired] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   const {
     syncing, error,
@@ -29,48 +21,10 @@ export default function App() {
   } = useGoogleSync()
 
   useEffect(() => {
-    if (token) {
-      const tokenTime = localStorage.getItem('gtoken_time')
-      if (tokenTime) {
-        const elapsed = Date.now() - Number(tokenTime)
-        if (elapsed > 50 * 60 * 1000) {
-          handleLogout()
-          setTokenExpired(true)
-          return
-        }
-      }
-      setAccessToken(token)
-      if (!loaded) {
-        loadFromSheets()
-          .then(() => {
-            setLoaded(true)
-            sessionStorage.setItem('app_loaded', 'true')
-          })
-          .catch(() => {
-            handleLogout()
-            setTokenExpired(true)
-          })
-      }
-    }
-  }, [token])
-
-  const handleLogout = () => {
-    localStorage.removeItem('gtoken')
-    localStorage.removeItem('gtoken_time')
-    sessionStorage.removeItem('app_loaded')
-    setToken(null)
-    setLoaded(false)
-  }
-
-  const handleLogin = (accessToken) => {
-    localStorage.setItem('gtoken', accessToken)
-    localStorage.setItem('gtoken_time', Date.now().toString())
-    sessionStorage.removeItem('app_loaded')
-    setAccessToken(accessToken)
-    setToken(accessToken)
-    setLoaded(false)
-    setTokenExpired(false)
-  }
+    loadFromSheets()
+      .then(() => setLoaded(true))
+      .catch(err => console.error('Error cargando datos:', err))
+  }, [])
 
   const handleSectorSelect = (sector, floor) => {
     setSelectedSector(sector)
@@ -96,15 +50,6 @@ export default function App() {
     { v: 'resolved',  icon: '✅',  label: 'Arreglos'  },
   ]
 
-  if (!token) {
-    return (
-      <LoginPage
-        onLogin={handleLogin}
-        expired={tokenExpired}
-      />
-    )
-  }
-
   if (!loaded) {
     return (
       <div style={{
@@ -126,7 +71,7 @@ export default function App() {
         }}/>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         <div style={{ fontSize: '14px', color: '#888' }}>
-          {syncing ? 'Cargando datos...' : 'Conectando...'}
+          Cargando datos...
         </div>
         {error && (
           <div style={{
@@ -152,24 +97,6 @@ export default function App() {
           padding: '4px',
         }}>Sincronizando...</div>
       )}
-
-      {/* Botón logout */}
-      <div style={{
-        position: 'fixed',
-        top: '8px',
-        right: '8px',
-        zIndex: 999,
-      }}>
-        <button onClick={handleLogout} style={{
-          background: '#f5f5f3',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          padding: '4px 8px',
-          fontSize: '11px',
-          cursor: 'pointer',
-          color: '#888',
-        }}>↩ Salir</button>
-      </div>
 
       {view === 'map' && (
         <MapPage onSectorSelect={handleSectorSelect} />
