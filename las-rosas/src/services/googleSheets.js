@@ -12,8 +12,10 @@ const objToRow = (headers, obj) =>
 
 // ── READ ──────────────────────────────────────────────────
 export const readSheet = async (sheetName) => {
-  const res = await fetch(`${API}?sheetName=${encodeURIComponent(sheetName)}`, {
-    method: 'GET',
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'read', sheetName }),
   })
   const data = await res.json()
   if (!data.values || data.values.length < 2) return []
@@ -90,7 +92,7 @@ export const initAllSheets = async () => {
   await initSheetHeaders(SHEETS.inventory, INVENTORY_HEADERS)
 }
 
-// ── TOKEN (ya no necesario pero mantenemos por compatibilidad) ──
+// ── TOKEN (no necesario con cuenta de servicio) ───────────
 export const setAccessToken = () => {}
 export const getAccessToken = () => 'service-account'
 

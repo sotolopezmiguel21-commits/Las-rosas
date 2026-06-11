@@ -1,12 +1,10 @@
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'POST') return res.status(405).end()
 
   try {
     const { action, sheetName, values, range } = req.body || {}
@@ -14,7 +12,6 @@ export default async function handler(req, res) {
     const email   = process.env.VITE_SERVICE_ACCOUNT_EMAIL
     const key     = process.env.VITE_SERVICE_ACCOUNT_KEY?.replace(/\\n/g, '\n')
 
-    // Get access token using service account
     const token = await getServiceAccountToken(email, key)
 
     const BASE = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
@@ -23,8 +20,7 @@ export default async function handler(req, res) {
       'Content-Type': 'application/json',
     }
 
-    if (req.method === 'GET') {
-      // Read sheet
+    if (action === 'read') {
       const response = await fetch(
         `${BASE}/values/${encodeURIComponent(sheetName)}`,
         { headers }
@@ -33,55 +29,49 @@ export default async function handler(req, res) {
       return res.status(200).json(data)
     }
 
-    if (req.method === 'POST') {
-      if (action === 'append') {
-        const response = await fetch(
-          `${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-          { method: 'POST', headers, body: JSON.stringify({ values }) }
-        )
-        const data = await response.json()
-        if (!response.ok) {
-          return res.status(response.status).json(data)
-        }
-        return res.status(200).json(data)
-      }
+    if (action === 'append') {
+      const response = await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+        { method: 'POST', headers, body: JSON.stringify({ values }) }
+      )
+      const data = await response.json()
+      if (!response.ok) return res.status(response.status).json(data)
+      return res.status(200).json(data)
+    }
 
-      if (action === 'put') {
-        const response = await fetch(
-          `${BASE}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
-          { method: 'PUT', headers, body: JSON.stringify({ values }) }
-        )
-        const data = await response.json()
-        return res.status(200).json(data)
-      }
+    if (action === 'put') {
+      const response = await fetch(
+        `${BASE}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
+        { method: 'PUT', headers, body: JSON.stringify({ values }) }
+      )
+      const data = await response.json()
+      return res.status(200).json(data)
+    }
 
-      if (action === 'clear') {
-        const response = await fetch(
-          `${BASE}/values/${encodeURIComponent(range)}:clear`,
-          { method: 'POST', headers }
-        )
-        const data = await response.json()
-        return res.status(200).json(data)
-      }
+    if (action === 'clear') {
+      const response = await fetch(
+        `${BASE}/values/${encodeURIComponent(range)}:clear`,
+        { method: 'POST', headers }
+      )
+      const data = await response.json()
+      return res.status(200).json(data)
+    }
 
-      if (action === 'initHeaders') {
-        // Check if headers exist
-        const checkRes = await fetch(
-          `${BASE}/values/${encodeURIComponent(sheetName)}!A1:Z1`,
-          { headers }
-        )
-        const checkData = await checkRes.json()
-        if (checkData.values && checkData.values[0]?.length > 0) {
-          return res.status(200).json({ skipped: true })
-        }
-        // Write headers
-        const writeRes = await fetch(
-          `${BASE}/values/${encodeURIComponent(sheetName)}!A1:Z1?valueInputOption=RAW`,
-          { method: 'PUT', headers, body: JSON.stringify({ values }) }
-        )
-        const writeData = await writeRes.json()
-        return res.status(200).json(writeData)
+    if (action === 'initHeaders') {
+      const checkRes = await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName)}!A1:Z1`,
+        { headers }
+      )
+      const checkData = await checkRes.json()
+      if (checkData.values && checkData.values[0]?.length > 0) {
+        return res.status(200).json({ skipped: true })
       }
+      const writeRes = await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName)}!A1:Z1?valueInputOption=RAW`,
+        { method: 'PUT', headers, body: JSON.stringify({ values }) }
+      )
+      const writeData = await writeRes.json()
+      return res.status(200).json(writeData)
     }
 
     return res.status(400).json({ error: 'Invalid action' })
@@ -132,7 +122,6 @@ async function createJWT(payload, privateKey) {
   const payloadEncoded = encodeBase64Url(payload)
   const signingInput   = `${headerEncoded}.${payloadEncoded}`
 
-  // Import private key
   const pemContents = privateKey
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
