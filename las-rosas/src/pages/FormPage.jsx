@@ -30,8 +30,10 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
     try {
       let photoUrl = null
       if (form.photo) {
+        console.log('Subiendo foto...')
         const filename = `daño-${sector.id}-${Date.now()}.jpg`
         photoUrl = await uploadPhotoToDrive(form.photo, filename)
+        console.log('URL foto:', photoUrl)
       }
       const damage = {
         sectorId:          sector.id,
