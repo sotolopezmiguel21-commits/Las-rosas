@@ -34,15 +34,10 @@ export function useGoogleSync() {
       const inventory = await readSheet(SHEETS.inventory)
       console.log('Inventario desde Sheets:', inventory)
 
-      if (allDamages.length > 0) {
-        damageStore.loadFromSheets(allDamages)
-      }
-      if (inventory.length > 0) {
-        inventoryStore.loadFromSheets(inventory.map(i => ({
-          ...i,
-          quantity: Number(i.quantity),
-        })))
-      }
+      damageStore.loadFromSheets(allDamages)
+      inventoryStore.loadFromSheets(
+        inventory.map(i => ({ ...i, quantity: Number(i.quantity) }))
+      )
 
       setLastSync(new Date())
     } catch (err) {
