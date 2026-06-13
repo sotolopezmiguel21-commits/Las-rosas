@@ -22,7 +22,19 @@ export default function App() {
 
   useEffect(() => {
     loadFromSheets()
-      .then(() => setLoaded(true))
+      .then(() => {
+        setLoaded(true)
+        // Recuperar vista de formulario si Android recargó
+        const formSector = sessionStorage.getItem('form_sector')
+        const formCell   = sessionStorage.getItem('form_cell')
+        const formFloor  = sessionStorage.getItem('form_floor')
+        if (formSector && formCell) {
+          setSelectedSector(JSON.parse(formSector))
+          setSelectedFloor(Number(formFloor))
+          setSelectedCell(formCell)
+          setView('form')
+        }
+      })
       .catch(err => console.error('Error cargando datos:', err))
   }, [])
 
@@ -40,6 +52,19 @@ export default function App() {
     } else {
       setView('form')
     }
+    const handleCellClick = (cell, cellDamages) => {
+    setSelectedCell(cell)
+    if (cellDamages.length > 0) {
+      setSelectedDamage(cellDamages[0])
+      setView('damage')
+    } else {
+      // Guardar estado para recuperar si Android recarga
+      sessionStorage.setItem('form_sector', JSON.stringify(selectedSector))
+      sessionStorage.setItem('form_floor', selectedFloor)
+      sessionStorage.setItem('form_cell', cell)
+      setView('form')
+    }
+  }
   }
 
   const isMapArea = ['map', 'sector', 'form', 'damage'].includes(view)

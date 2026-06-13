@@ -20,16 +20,19 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
   const fileRef = useRef()
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
 
-  useEffect(() => {
+useEffect(() => {
     setSectorInventory(inventoryStore.getBySector(sector.id))
   }, [sector.id])
 
-  // Recuperar foto si la página se recargó al volver de la cámara
+  // Recuperar formulario completo si la página se recargó
   useEffect(() => {
-    const pendingPhoto = sessionStorage.getItem('pending_photo')
-    if (pendingPhoto) {
-      setForm(f => ({ ...f, photo: pendingPhoto }))
-      sessionStorage.removeItem('pending_photo')
+    const pendingForm = sessionStorage.getItem('pending_form')
+    if (pendingForm) {
+      try {
+        const saved = JSON.parse(pendingForm)
+        setForm(f => ({ ...f, ...saved }))
+      } catch (e) {}
+      sessionStorage.removeItem('pending_form')
     }
   }, [])
 
@@ -270,7 +273,17 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
               const reader = new FileReader()
               reader.onload = ev => {
                 const photoData = ev.target.result
-                sessionStorage.setItem('pending_photo', photoData)
+                // Guardar formulario completo en sessionStorage
+                const currentForm = {
+                  description:       form.description,
+                  solution:          form.solution,
+                  priority:          form.priority,
+                  supplies:          form.supplies,
+                  inventoryItemId:   form.inventoryItemId,
+                  inventoryItemName: form.inventoryItemName,
+                  photo:             photoData,
+                }
+                sessionStorage.setItem('pending_form', JSON.stringify(currentForm))
                 setForm(f => ({ ...f, photo: photoData }))
               }
               reader.readAsDataURL(file)
