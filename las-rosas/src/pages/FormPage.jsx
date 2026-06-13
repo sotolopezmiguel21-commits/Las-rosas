@@ -24,6 +24,15 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
     setSectorInventory(inventoryStore.getBySector(sector.id))
   }, [sector.id])
 
+  // Recuperar foto si la página se recargó al volver de la cámara
+  useEffect(() => {
+    const pendingPhoto = sessionStorage.getItem('pending_photo')
+    if (pendingPhoto) {
+      setForm(f => ({ ...f, photo: pendingPhoto }))
+      sessionStorage.removeItem('pending_photo')
+    }
+  }, [])
+
   const handleSave = async () => {
     if (!form.description.trim()) return
     setSaving(true)
@@ -53,6 +62,7 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
         status:            'active',
       }
       const id = damageStore.add(damage)
+      sessionStorage.removeItem('pending_photo')
       onSaved({ ...damage, id })
     } finally {
       setSaving(false)
@@ -259,7 +269,9 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
               if (!file) return
               const reader = new FileReader()
               reader.onload = ev => {
-                setForm(f => ({ ...f, photo: ev.target.result }))
+                const photoData = ev.target.result
+                sessionStorage.setItem('pending_photo', photoData)
+                setForm(f => ({ ...f, photo: photoData }))
               }
               reader.readAsDataURL(file)
             }}
@@ -297,6 +309,8 @@ export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
             )
           }
         </div>
+
+          handleSave
 
         {/* Save */}
         <button onClick={handleSave}
