@@ -90,7 +90,9 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
               textTransform: 'uppercase',
               marginBottom: '6px',
             }}>Foto del daño</div>
-            <img src={damage.photo} alt="Daño"
+            <img src={damage.photo?.includes('drive.google.com') 
+              ? damage.photo.replace('uc?id=', 'thumbnail?id=') + '&sz=w800'
+              : damage.photo} alt="Daño"
               style={{
                 width: '100%',
                 borderRadius: '10px',
@@ -133,7 +135,9 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
               textTransform: 'uppercase',
               marginBottom: '6px',
             }}>Foto del arreglo</div>
-            <img src={damage.photoResolved} alt="Arreglo"
+            <img src={damage.photoResolved?.includes('drive.google.com') 
+              ? damage.photoResolved.replace('uc?id=', 'thumbnail?id=') + '&sz=w800'
+              : damage.photoResolved} alt="Arreglo"
               style={{
                 width: '100%',
                 borderRadius: '10px',
