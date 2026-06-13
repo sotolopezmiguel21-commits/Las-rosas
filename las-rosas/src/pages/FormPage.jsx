@@ -4,6 +4,7 @@ import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
 import { uploadPhotoToDrive } from '../services/googleSheets'
 import Header from '../components/Header'
+import { compressImage } from '../utils/compressImage'
 
 export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
   const [form, setForm] = useState({
@@ -266,14 +267,13 @@ useEffect(() => {
             type="file"
             accept="image/*"
             capture="environment"
-            style={{ display: 'none' }}
+            style={{ display: 'none' }} 
             onChange={async e => {
               const file = e.target.files[0]
               if (!file) return
               const reader = new FileReader()
-              reader.onload = ev => {
-                const photoData = ev.target.result
-                // Guardar formulario completo en sessionStorage
+              reader.onload = async ev => {
+                const compressed = await compressImage(ev.target.result, 800, 0.5)
                 const currentForm = {
                   description:       form.description,
                   solution:          form.solution,
@@ -281,10 +281,10 @@ useEffect(() => {
                   supplies:          form.supplies,
                   inventoryItemId:   form.inventoryItemId,
                   inventoryItemName: form.inventoryItemName,
-                  photo:             photoData,
+                  photo:             compressed,
                 }
                 sessionStorage.setItem('pending_form', JSON.stringify(currentForm))
-                setForm(f => ({ ...f, photo: photoData }))
+                setForm(f => ({ ...f, photo: compressed }))
               }
               reader.readAsDataURL(file)
             }}
