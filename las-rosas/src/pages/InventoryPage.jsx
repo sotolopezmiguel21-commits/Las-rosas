@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { useSectorInventory } from '../data/inventoryStore'
 import { inventoryStore } from '../data/inventoryStore'
+import { damageStore } from '../data/store'
 import { SECTOR_TYPES } from '../data/config'
 import Header from '../components/Header'
 import InventoryFormPage from './InventoryFormPage'
 
 function ItemRow({ item, onEdit, onDelete }) {
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const linkedDamages = damageStore.getAll().filter(
+    d => d.status === 'active' && d.inventoryItemId === item.id
+  )
 
   return (
     <div style={{
@@ -93,6 +98,34 @@ function ItemRow({ item, onEdit, onDelete }) {
           borderRadius: '8px',
           border: '1px solid #E24B4A44',
         }}>
+          {linkedDamages.length > 0 && (
+            <div style={{
+              marginBottom: '10px',
+              padding: '8px 10px',
+              background: '#FFF6E0',
+              border: '1px solid #E2A23D44',
+              borderRadius: '8px',
+            }}>
+              <div style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#8A5A12',
+                marginBottom: '4px',
+              }}>⚠️ Hay {linkedDamages.length} daño{linkedDamages.length > 1 ? 's' : ''} activo{linkedDamages.length > 1 ? 's' : ''} vinculado{linkedDamages.length > 1 ? 's' : ''} a este elemento</div>
+              {linkedDamages.map(d => (
+                <div key={d.id} style={{
+                  fontSize: '11px',
+                  color: '#8A5A12',
+                  marginTop: '2px',
+                }}>· {d.description} (Celda {d.cell})</div>
+              ))}
+              <div style={{
+                fontSize: '11px',
+                color: '#8A5A12',
+                marginTop: '4px',
+              }}>Revisa si ya fue reparado antes de eliminar.</div>
+            </div>
+          )}
           <div style={{
             fontSize: '12px',
             color: '#A32D2D',
