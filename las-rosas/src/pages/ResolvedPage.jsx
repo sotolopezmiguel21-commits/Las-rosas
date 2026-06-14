@@ -108,19 +108,6 @@ export default function ResolvedPage({ onBack }) {
                     </div>
                   </div>
 
-                  {/* Solution (always visible) */}
-                  {d.solution && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#555',
-                      marginBottom: '8px',
-                      paddingLeft: '8px',
-                      borderLeft: '2px solid #1D9E75',
-                    }}>
-                      {d.solution}
-                    </div>
-                  )}
-
                   {/* Dates + priority */}
                   <div style={{
                     display: 'flex',
@@ -154,6 +141,19 @@ export default function ResolvedPage({ onBack }) {
                   {/* Expanded details */}
                   {isExpanded && (
                     <div style={{ marginTop: '10px' }}>
+                      {/* Solution */}
+                      {d.solution && (
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#555',
+                          marginBottom: '10px',
+                          paddingLeft: '8px',
+                          borderLeft: '2px solid #1D9E75',
+                        }}>
+                          {d.solution}
+                        </div>
+                      )}
+
                       {/* Supplies */}
                       {d.supplies && (
                         <div style={{ marginBottom: '10px' }}>
