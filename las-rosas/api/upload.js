@@ -20,7 +20,10 @@ export default async function handler(req, res) {
       bytes[i] = binaryString.charCodeAt(i)
     }
 
-    const metadata = JSON.stringify({ name: filename })
+    const folderId = process.env.DRIVE_FOLDER_ID
+    const metadata = JSON.stringify(
+      folderId ? { name: filename, parents: [folderId] } : { name: filename }
+    )
     const boundary = 'boundary_las_rosas'
     const delimiter = `\r\n--${boundary}\r\n`
     const closeDelim = `\r\n--${boundary}--`
