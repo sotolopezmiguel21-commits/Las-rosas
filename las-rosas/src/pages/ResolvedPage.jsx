@@ -4,8 +4,14 @@ import { getSectorById } from '../data/floors'
 import { SECTOR_TYPES, PRIORITY } from '../data/config'
 import Header from '../components/Header'
 
+const driveUrl = (url) =>
+  url?.includes('drive.google.com')
+    ? url.replace('uc?id=', 'thumbnail?id=') + '&sz=w800'
+    : url
+
 export default function ResolvedPage({ onBack }) {
   const [damages, setDamages] = useState(() => damageStore.getAll())
+  const [expandedId, setExpandedId] = useState(null)
 
   useEffect(() => {
     return damageStore.subscribe(setDamages)
@@ -49,6 +55,8 @@ export default function ResolvedPage({ onBack }) {
               const sector = getSectorById(d.sectorId)
               const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
               const p = PRIORITY[d.priority]
+              const isExpanded = expandedId === d.id
+
               return (
                 <div key={d.id} style={{
                   background: 'white',
@@ -56,7 +64,10 @@ export default function ResolvedPage({ onBack }) {
                   borderRadius: '12px',
                   padding: '12px 14px',
                   marginBottom: '10px',
-                }}>
+                  cursor: 'pointer',
+                }}
+                onClick={() => setExpandedId(isExpanded ? null : d.id)}
+                >
                   {/* Header row */}
                   <div style={{
                     display: 'flex',
@@ -78,14 +89,26 @@ export default function ResolvedPage({ onBack }) {
                         {type.icon} {sector?.name} · Celda {d.cell}
                       </div>
                     </div>
-                    <span style={{
-                      fontSize: '10px',
-                      color: '#aaa',
-                      whiteSpace: 'nowrap',
-                    }}>{d.id}</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}>
+                      <span style={{
+                        fontSize: '10px',
+                        color: '#aaa',
+                        whiteSpace: 'nowrap',
+                      }}>{d.id}</span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: '#bbb',
+                        transform: isExpanded ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.15s',
+                      }}>▾</span>
+                    </div>
                   </div>
 
-                  {/* Solution */}
+                  {/* Solution (always visible) */}
                   {d.solution && (
                     <div style={{
                       fontSize: '12px',
@@ -128,44 +151,67 @@ export default function ResolvedPage({ onBack }) {
                     }}>Prioridad {p.label}</span>
                   </div>
 
-                  {/* Photos */}
-                  {(d.photo || d.photoResolved) && (
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: d.photo && d.photoResolved ? '1fr 1fr' : '1fr',
-                      gap: '8px',
-                      marginTop: '10px',
-                    }}>
-                      {d.photo && (
-                        <div>
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div style={{ marginTop: '10px' }}>
+                      {/* Supplies */}
+                      {d.supplies && (
+                        <div style={{ marginBottom: '10px' }}>
                           <div style={{
                             fontSize: '10px',
-                            color: '#aaa',
-                            marginBottom: '4px',
-                          }}>Antes</div>
-                          <img src={d.photo} alt="Daño"
-                            style={{
-                              width: '100%',
-                              borderRadius: '8px',
-                              height: '100px',
-                              objectFit: 'cover',
-                            }} />
+                            fontWeight: 600,
+                            color: '#888',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '3px',
+                          }}>Implementos necesarios</div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#111',
+                            lineHeight: 1.5,
+                          }}>{d.supplies}</div>
                         </div>
                       )}
-                      {d.photoResolved && (
-                        <div>
-                          <div style={{
-                            fontSize: '10px',
-                            color: '#aaa',
-                            marginBottom: '4px',
-                          }}>Después</div>
-                          <img src={d.photoResolved} alt="Arreglo"
-                            style={{
-                              width: '100%',
-                              borderRadius: '8px',
-                              height: '100px',
-                              objectFit: 'cover',
-                            }} />
+
+                      {/* Photos */}
+                      {(d.photo || d.photoResolved) && (
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: d.photo && d.photoResolved ? '1fr 1fr' : '1fr',
+                          gap: '8px',
+                        }}>
+                          {d.photo && (
+                            <div>
+                              <div style={{
+                                fontSize: '10px',
+                                color: '#aaa',
+                                marginBottom: '4px',
+                              }}>Antes</div>
+                              <img src={driveUrl(d.photo)} alt="Daño"
+                                style={{
+                                  width: '100%',
+                                  borderRadius: '8px',
+                                  height: '120px',
+                                  objectFit: 'cover',
+                                }} />
+                            </div>
+                          )}
+                          {d.photoResolved && (
+                            <div>
+                              <div style={{
+                                fontSize: '10px',
+                                color: '#aaa',
+                                marginBottom: '4px',
+                              }}>Después</div>
+                              <img src={driveUrl(d.photoResolved)} alt="Arreglo"
+                                style={{
+                                  width: '100%',
+                                  borderRadius: '8px',
+                                  height: '120px',
+                                  objectFit: 'cover',
+                                }} />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
