@@ -66,6 +66,7 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
         }}>
           {[
             ['Descripción del daño', damage.description],
+            ['Elemento dañado', damage.inventoryItemName],
             ['Posible solución', damage.solution],
             ['Implementos necesarios', damage.supplies],
           ].filter(([, v]) => v).map(([label, value]) => (
