@@ -126,11 +126,21 @@ function ItemRow({ item, onEdit, onDelete }) {
   )
 }
 
-export default function InventoryPage({ sector, onBack }) {
+export default function InventoryPage({
+  sector, onBack,
+  saveInventoryItem, updateInventoryItem, deleteInventoryItem,
+}) {
   const inventory = useSectorInventory(sector.id)
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
+
+  const handleDelete = async (id) => {
+    inventoryStore.remove(id)
+    if (deleteInventoryItem) {
+      await deleteInventoryItem(id)
+    }
+  }
 
   if (showForm || editItem) {
     return (
@@ -145,6 +155,8 @@ export default function InventoryPage({ sector, onBack }) {
           setShowForm(false)
           setEditItem(null)
         }}
+        saveInventoryItem={saveInventoryItem}
+        updateInventoryItem={updateInventoryItem}
       />
     )
   }
@@ -212,7 +224,7 @@ export default function InventoryPage({ sector, onBack }) {
                   key={item.id}
                   item={item}
                   onEdit={(i) => setEditItem(i)}
-                  onDelete={(id) => inventoryStore.remove(id)}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>

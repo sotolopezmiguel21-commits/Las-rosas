@@ -18,6 +18,7 @@ export default function App() {
   const {
     syncing, error,
     loadFromSheets, saveDamage, resolveDamage,
+    saveInventoryItem, updateInventoryItem, deleteInventoryItem,
   } = useGoogleSync()
 
   useEffect(() => {
@@ -50,21 +51,12 @@ export default function App() {
       setSelectedDamage(cellDamages[0])
       setView('damage')
     } else {
-      setView('form')
-    }
-    const handleCellClick = (cell, cellDamages) => {
-    setSelectedCell(cell)
-    if (cellDamages.length > 0) {
-      setSelectedDamage(cellDamages[0])
-      setView('damage')
-    } else {
       // Guardar estado para recuperar si Android recarga
       sessionStorage.setItem('form_sector', JSON.stringify(selectedSector))
       sessionStorage.setItem('form_floor', selectedFloor)
       sessionStorage.setItem('form_cell', cell)
       setView('form')
     }
-  }
   }
 
   const isMapArea = ['map', 'sector', 'form', 'damage'].includes(view)
@@ -133,6 +125,9 @@ export default function App() {
           floor={selectedFloor}
           onBack={() => setView('map')}
           onCellClick={handleCellClick}
+          saveInventoryItem={saveInventoryItem}
+          updateInventoryItem={updateInventoryItem}
+          deleteInventoryItem={deleteInventoryItem}
         />
       )}
 

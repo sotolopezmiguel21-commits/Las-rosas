@@ -6,7 +6,10 @@ import Grid from '../components/Grid'
 import AlertBadge from '../components/AlertBadge'
 import InventoryPage from './InventoryPage'
 
-export default function SectorPage({ sector, floor, onBack, onCellClick }) {
+export default function SectorPage({
+  sector, floor, onBack, onCellClick,
+  saveInventoryItem, updateInventoryItem, deleteInventoryItem,
+}) {
   const [damages, setDamages] = useState(damageStore.getAll())
   const [tab, setTab] = useState('damages')
 
@@ -25,6 +28,9 @@ export default function SectorPage({ sector, floor, onBack, onCellClick }) {
       <InventoryPage
         sector={sector}
         onBack={() => setTab('damages')}
+        saveInventoryItem={saveInventoryItem}
+        updateInventoryItem={updateInventoryItem}
+        deleteInventoryItem={deleteInventoryItem}
       />
     )
   }

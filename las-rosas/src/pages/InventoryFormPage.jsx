@@ -4,7 +4,10 @@ import { inventoryStore } from '../data/inventoryStore'
 import { SECTOR_TYPES } from '../data/config'
 import Header from '../components/Header'
 
-export default function InventoryFormPage({ sector, onBack, onSaved, editItem }) {
+export default function InventoryFormPage({
+  sector, onBack, onSaved, editItem,
+  saveInventoryItem, updateInventoryItem,
+}) {
   const isEdit = !!editItem
   const [step, setStep] = useState(isEdit ? 2 : 1)
   const [selectedCategory, setSelectedCategory] = useState(
@@ -15,31 +18,43 @@ export default function InventoryFormPage({ sector, onBack, onSaved, editItem })
     quantity: isEdit ? editItem.quantity : 1,
     detail:   isEdit ? editItem.detail   : '',
   })
+  const [saving, setSaving] = useState(false)
 
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
   const category = selectedCategory
     ? INVENTORY_CATEGORIES[selectedCategory]
     : null
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || form.quantity < 1) return
-    const data = {
-      sectorId:      sector.id,
-      sectorName:    sector.name,
-      category:      selectedCategory,
-      categoryLabel: category.label,
-      categoryIcon:  category.icon,
-      name:          form.name,
-      quantity:      Number(form.quantity),
-      detail:        form.detail,
-      dateCreated:   new Date().toISOString().split('T')[0],
+    setSaving(true)
+    try {
+      const data = {
+        sectorId:      sector.id,
+        sectorName:    sector.name,
+        category:      selectedCategory,
+        categoryLabel: category.label,
+        categoryIcon:  category.icon,
+        name:          form.name,
+        quantity:      Number(form.quantity),
+        detail:        form.detail,
+        dateCreated:   isEdit ? editItem.dateCreated : new Date().toISOString().split('T')[0],
+      }
+      if (isEdit) {
+        inventoryStore.update(editItem.id, data)
+        if (updateInventoryItem) {
+          await updateInventoryItem({ ...data, id: editItem.id })
+        }
+      } else {
+        const id = inventoryStore.add(data)
+        if (saveInventoryItem) {
+          await saveInventoryItem({ ...data, id })
+        }
+      }
+      onSaved()
+    } finally {
+      setSaving(false)
     }
-    if (isEdit) {
-      inventoryStore.update(editItem.id, data)
-    } else {
-      inventoryStore.add(data)
-    }
-    onSaved()
   }
 
   return (
@@ -245,19 +260,19 @@ export default function InventoryFormPage({ sector, onBack, onSaved, editItem })
 
             {/* Save button */}
             <button onClick={handleSave}
-              disabled={!form.name || form.quantity < 1}
+              disabled={!form.name || form.quantity < 1 || saving}
               style={{
                 width: '100%',
                 padding: '14px',
-                background: form.name ? '#3B5FCC' : '#eee',
-                color: form.name ? 'white' : '#aaa',
+                background: form.name && !saving ? '#3B5FCC' : '#eee',
+                color: form.name && !saving ? 'white' : '#aaa',
                 border: 'none',
                 borderRadius: '12px',
                 fontSize: '15px',
                 fontWeight: 600,
-                cursor: form.name ? 'pointer' : 'default',
+                cursor: form.name && !saving ? 'pointer' : 'default',
               }}>
-              {isEdit ? 'Guardar cambios' : 'Agregar elemento'}
+              {saving ? '⏳ Guardando...' : (isEdit ? 'Guardar cambios' : 'Agregar elemento')}
             </button>
 
           </div>
