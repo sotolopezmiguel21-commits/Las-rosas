@@ -12,9 +12,16 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
 
   const handleResolve = () => {
-    damageStore.resolve(damage.id, resolvePhoto)
-    onResolved()
+  const today = new Date().toISOString().split('T')[0]
+  const resolvedDamage = {
+    ...damage,
+    status: 'resolved',
+    dateResolved: today,
+    photoResolved: resolvePhoto,
   }
+  damageStore.resolve(damage.id, resolvePhoto)
+  onResolved(resolvedDamage)
+}
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
