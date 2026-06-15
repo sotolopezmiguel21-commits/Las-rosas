@@ -154,6 +154,25 @@ export default function ResolvedPage({ onBack }) {
                         </div>
                       )}
 
+                      {/* Inventory item */}
+                      {d.inventoryItemName && (
+                        <div style={{ marginBottom: '10px' }}>
+                          <div style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            color: '#888',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '3px',
+                          }}>Elemento dañado</div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#111',
+                            lineHeight: 1.5,
+                          }}>{d.inventoryItemName}</div>
+                        </div>
+                      )}
+
                       {/* Supplies */}
                       {d.supplies && (
                         <div style={{ marginBottom: '10px' }}>
