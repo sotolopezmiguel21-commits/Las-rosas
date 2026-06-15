@@ -17,7 +17,7 @@ export default function App() {
 
   const {
     syncing, error,
-    loadFromSheets, saveDamage, resolveDamage,
+    loadFromSheets, saveDamage, updateDamage, resolveDamage,
     saveInventoryItem, updateInventoryItem, deleteInventoryItem,
   } = useGoogleSync()
 
@@ -144,6 +144,21 @@ export default function App() {
         />
       )}
 
+      {view === 'edit' && selectedSector && selectedDamage && (
+        <FormPage
+          sector={selectedSector}
+          floor={selectedFloor}
+          cell={selectedCell}
+          editDamage={selectedDamage}
+          onBack={() => setView('damage')}
+          onSaved={async (updatedDamage) => {
+            await updateDamage(updatedDamage)
+            setSelectedDamage(updatedDamage)
+            setView('damage')
+          }}
+        />
+      )}
+
       {view === 'damage' && selectedDamage && (
         <DamagePage
           damage={selectedDamage}
@@ -152,6 +167,10 @@ export default function App() {
           onResolved={async (resolvedDamage) => {
             await resolveDamage(resolvedDamage)
             setView('sector')
+          }}
+          onEdit={(damage) => {
+            setSelectedDamage(damage)
+            setView('edit')
           }}
         />
       )}

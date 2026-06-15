@@ -3,30 +3,33 @@ import { PRIORITY, SECTOR_TYPES } from '../data/config'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
 import { uploadPhotoToDrive } from '../services/googleSheets'
-import Header from '../components/Header'
 import { compressImage } from '../utils/compressImage'
+import Header from '../components/Header'
 
-export default function FormPage({ sector, floor, cell, onBack, onSaved }) {
+export default function FormPage({ sector, floor, cell, onBack, onSaved, editDamage }) {
+  const isEdit = !!editDamage
+
   const [form, setForm] = useState({
-    description: '',
-    solution: '',
-    priority: 'media',
-    supplies: '',
-    photo: null,
-    inventoryItemId: null,
-    inventoryItemName: null,
+    description: isEdit ? editDamage.description || '' : '',
+    solution:    isEdit ? editDamage.solution || ''    : '',
+    priority:    isEdit ? editDamage.priority || 'media' : 'media',
+    supplies:    isEdit ? editDamage.supplies || ''    : '',
+    photo:       isEdit ? editDamage.photo || null     : null,
+    inventoryItemId:   isEdit ? editDamage.inventoryItemId || null   : null,
+    inventoryItemName: isEdit ? editDamage.inventoryItemName || null : null,
   })
   const [sectorInventory, setSectorInventory] = useState([])
   const [saving, setSaving] = useState(false)
   const fileRef = useRef()
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
 
-useEffect(() => {
+  useEffect(() => {
     setSectorInventory(inventoryStore.getBySector(sector.id))
   }, [sector.id])
 
-  // Recuperar formulario completo si la página se recargó
+  // Recuperar formulario completo si la página se recargó (solo al crear, no al editar)
   useEffect(() => {
+    if (isEdit) return
     const pendingForm = sessionStorage.getItem('pending_form')
     if (pendingForm) {
       try {
@@ -41,33 +44,52 @@ useEffect(() => {
     if (!form.description.trim()) return
     setSaving(true)
     try {
-      let photoUrl = null
-      if (form.photo) {
+      let photoUrl = form.photo
+
+      // Solo subir si la foto cambió (es un dataURL nuevo, no un link de Drive existente)
+      const isNewPhoto = form.photo && form.photo.startsWith('data:')
+      if (isNewPhoto) {
         console.log('Subiendo foto...')
         const filename = `daño-${sector.id}-${Date.now()}.jpg`
         photoUrl = await uploadPhotoToDrive(form.photo, filename)
         console.log('URL foto:', photoUrl)
       }
-      const damage = {
-        sectorId:          sector.id,
-        sectorName:        sector.name,
-        floor,
-        cell,
-        description:       form.description,
-        solution:          form.solution,
-        priority:          form.priority,
-        supplies:          form.supplies,
-        photo:             photoUrl,
-        inventoryItemId:   form.inventoryItemId,
-        inventoryItemName: form.inventoryItemName,
-        photoResolved:     null,
-        dateCreated:       new Date().toISOString().split('T')[0],
-        dateResolved:      null,
-        status:            'active',
+
+      if (isEdit) {
+        const updatedDamage = {
+          ...editDamage,
+          description:       form.description,
+          solution:          form.solution,
+          priority:          form.priority,
+          supplies:          form.supplies,
+          photo:             photoUrl,
+          inventoryItemId:   form.inventoryItemId,
+          inventoryItemName: form.inventoryItemName,
+        }
+        damageStore.update(editDamage.id, updatedDamage)
+        onSaved(updatedDamage)
+      } else {
+        const damage = {
+          sectorId:          sector.id,
+          sectorName:        sector.name,
+          floor,
+          cell,
+          description:       form.description,
+          solution:          form.solution,
+          priority:          form.priority,
+          supplies:          form.supplies,
+          photo:             photoUrl,
+          inventoryItemId:   form.inventoryItemId,
+          inventoryItemName: form.inventoryItemName,
+          photoResolved:     null,
+          dateCreated:       new Date().toISOString().split('T')[0],
+          dateResolved:      null,
+          status:            'active',
+        }
+        const id = damageStore.add(damage)
+        sessionStorage.removeItem('pending_photo')
+        onSaved({ ...damage, id })
       }
-      const id = damageStore.add(damage)
-      sessionStorage.removeItem('pending_photo')
-      onSaved({ ...damage, id })
     } finally {
       setSaving(false)
     }
@@ -104,7 +126,7 @@ useEffect(() => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <Header title="Registrar daño" onBack={onBack} />
+      <Header title={isEdit ? 'Editar daño' : 'Registrar daño'} onBack={onBack} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px' }}>
 
@@ -124,7 +146,7 @@ useEffect(() => {
           <span>{type.icon}</span>
           <span>{sector?.name}</span>
           <span style={{ color: '#ccc' }}>·</span>
-          <span>Celda {cell}</span>
+          <span>Celda {isEdit ? editDamage.cell : cell}</span>
         </div>
 
         {field('¿Qué está dañado?', 'description', 'Ej: Llave del lavamanos gotea constantemente...')}
@@ -267,23 +289,25 @@ useEffect(() => {
             type="file"
             accept="image/*"
             capture="environment"
-            style={{ display: 'none' }} 
+            style={{ display: 'none' }}
             onChange={async e => {
               const file = e.target.files[0]
               if (!file) return
               const reader = new FileReader()
               reader.onload = async ev => {
                 const compressed = await compressImage(ev.target.result, 800, 0.5)
-                const currentForm = {
-                  description:       form.description,
-                  solution:          form.solution,
-                  priority:          form.priority,
-                  supplies:          form.supplies,
-                  inventoryItemId:   form.inventoryItemId,
-                  inventoryItemName: form.inventoryItemName,
-                  photo:             compressed,
+                if (!isEdit) {
+                  const currentForm = {
+                    description:       form.description,
+                    solution:          form.solution,
+                    priority:          form.priority,
+                    supplies:          form.supplies,
+                    inventoryItemId:   form.inventoryItemId,
+                    inventoryItemName: form.inventoryItemName,
+                    photo:             compressed,
+                  }
+                  sessionStorage.setItem('pending_form', JSON.stringify(currentForm))
                 }
-                sessionStorage.setItem('pending_form', JSON.stringify(currentForm))
                 setForm(f => ({ ...f, photo: compressed }))
               }
               reader.readAsDataURL(file)
@@ -292,7 +316,9 @@ useEffect(() => {
           {form.photo
             ? (
               <div style={{ position: 'relative' }}>
-                <img src={form.photo} alt="Foto"
+                <img src={form.photo?.includes('drive.google.com')
+                  ? form.photo.replace('uc?id=', 'thumbnail?id=') + '&sz=w800'
+                  : form.photo} alt="Foto"
                   style={{
                     width: '100%',
                     borderRadius: '10px',
@@ -323,8 +349,6 @@ useEffect(() => {
           }
         </div>
 
-          handleSave
-
         {/* Save */}
         <button onClick={handleSave}
           disabled={!form.description.trim() || saving}
@@ -339,7 +363,9 @@ useEffect(() => {
             fontWeight: 600,
             cursor: form.description.trim() && !saving ? 'pointer' : 'default',
           }}>
-          {saving ? '⏳ Subiendo foto...' : 'Registrar daño'}
+          {saving
+            ? '⏳ Subiendo foto...'
+            : (isEdit ? 'Guardar cambios' : 'Registrar daño')}
         </button>
 
       </div>

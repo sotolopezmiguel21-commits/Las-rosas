@@ -5,7 +5,7 @@ import Header from '../components/Header'
 import AlertBadge from '../components/AlertBadge'
 import { compressImage } from '../utils/compressImage'
 
-export default function DamagePage({ damage, sector, onBack, onResolved }) {
+export default function DamagePage({ damage, sector, onBack, onResolved, onEdit }) {
   const [showResolve, setShowResolve] = useState(false)
   const [resolvePhoto, setResolvePhoto] = useState(null)
   const fileRef = useRef()
@@ -158,7 +158,7 @@ export default function DamagePage({ damage, sector, onBack, onResolved }) {
         {/* Actions */}
         {damage.status === 'active' && !showResolve && (
           <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-            <button onClick={onBack} style={{
+            <button onClick={() => onEdit(damage)} style={{
               flex: 1,
               padding: '13px',
               border: '1px solid #ddd',

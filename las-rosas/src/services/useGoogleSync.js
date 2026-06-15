@@ -67,6 +67,27 @@ export function useGoogleSync() {
     }
   }, [])
 
+  // ── UPDATE DAMAGE ────────────────────────────────────────
+  const updateDamage = useCallback(async (damage) => {
+    try {
+      const sheetName = damage.status === 'resolved' ? SHEETS.resolved : SHEETS.damages
+      const allDamages = await readSheet(sheetName)
+      const rowIndex = allDamages.findIndex(d => d.id === damage.id)
+      if (rowIndex !== -1) {
+        await updateRow(sheetName, rowIndex, DAMAGE_HEADERS, damage)
+      }
+    } catch (err) {
+      if (err.message.includes('401')) {
+        localStorage.removeItem('gtoken')
+        localStorage.removeItem('gtoken_time')
+        sessionStorage.removeItem('app_loaded')
+        window.location.reload()
+        return
+      }
+      setError('Error al actualizar daño: ' + err.message)
+    }
+  }, [])
+
   // ── RESOLVE DAMAGE ──────────────────────────────────────
   const resolveDamage = useCallback(async (damage) => {
     try {
@@ -129,6 +150,7 @@ export function useGoogleSync() {
     error,
     loadFromSheets,
     saveDamage,
+    updateDamage,
     resolveDamage,
     saveInventoryItem,
     updateInventoryItem,
