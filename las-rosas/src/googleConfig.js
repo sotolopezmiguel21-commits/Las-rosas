@@ -8,8 +8,10 @@ export const GOOGLE_CONFIG = {
 }
 
 export const SHEETS = {
-  damages:   'Daños Activos',
-  resolved:  'Arreglos Realizados',
-  inventory: 'Inventario',
-  config:    'Configuracion',
+  damages:      'Daños Activos',
+  resolved:     'Arreglos Realizados',
+  inventory:    'Inventario',
+  config:       'Configuracion',
+  sectors:      'Sectores',
+  improvements: 'Mejoras',
 }

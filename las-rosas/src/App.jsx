@@ -19,6 +19,8 @@ export default function App() {
     syncing, error,
     loadFromSheets, saveDamage, updateDamage, resolveDamage,
     saveInventoryItem, updateInventoryItem, deleteInventoryItem,
+    saveSector, updateSector, deleteSector,
+    saveImprovement, completeImprovement, deleteImprovement,
   } = useGoogleSync()
 
   useEffect(() => {
@@ -116,7 +118,12 @@ export default function App() {
       )}
 
       {view === 'map' && (
-        <MapPage onSectorSelect={handleSectorSelect} />
+        <MapPage
+          onSectorSelect={handleSectorSelect}
+          saveSector={saveSector}
+          updateSector={updateSector}
+          deleteSector={deleteSector}
+        />
       )}
 
       {view === 'sector' && selectedSector && (
@@ -128,6 +135,9 @@ export default function App() {
           saveInventoryItem={saveInventoryItem}
           updateInventoryItem={updateInventoryItem}
           deleteInventoryItem={deleteInventoryItem}
+          saveImprovement={saveImprovement}
+          completeImprovement={completeImprovement}
+          deleteImprovement={deleteImprovement}
         />
       )}
 

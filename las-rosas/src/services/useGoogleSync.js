@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react'
 import {
   readSheet, appendRow, updateRow, clearRow,
-  initAllSheets, DAMAGE_HEADERS, INVENTORY_HEADERS,
+  initAllSheets, DAMAGE_HEADERS, INVENTORY_HEADERS, IMPROVEMENT_HEADERS,
   getAccessToken,
 } from './googleSheets'
 import { SHEETS } from '../googleConfig'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
+import { sectorStore, SECTOR_HEADERS } from '../data/sectorStore'
+import { improvementStore } from '../data/improvementStore'
 
 export function useGoogleSync() {
   const [syncing, setSyncing] = useState(false)
@@ -34,10 +36,18 @@ export function useGoogleSync() {
       const inventory = await readSheet(SHEETS.inventory)
       console.log('Inventario desde Sheets:', inventory)
 
+      const sectors = await readSheet(SHEETS.sectors)
+      console.log('Sectores desde Sheets:', sectors)
+
+      const improvements = await readSheet(SHEETS.improvements)
+      console.log('Mejoras desde Sheets:', improvements)
+
       damageStore.loadFromSheets(allDamages)
       inventoryStore.loadFromSheets(
         inventory.map(i => ({ ...i, quantity: Number(i.quantity) }))
       )
+      sectorStore.loadFromSheets(sectors)
+      improvementStore.loadFromSheets(improvements)
 
       setLastSync(new Date())
     } catch (err) {
@@ -144,6 +154,76 @@ export function useGoogleSync() {
     }
   }, [])
 
+  // ── SAVE SECTOR ──────────────────────────────────────────
+  const saveSector = useCallback(async (sector) => {
+    try {
+      await appendRow(SHEETS.sectors, SECTOR_HEADERS, sector)
+    } catch (err) {
+      setError('Error al guardar sector: ' + err.message)
+    }
+  }, [])
+
+  // ── UPDATE SECTOR ────────────────────────────────────────
+  const updateSector = useCallback(async (sector) => {
+    try {
+      const sectors = await readSheet(SHEETS.sectors)
+      const rowIndex = sectors.findIndex(s => s.id === sector.id)
+      if (rowIndex !== -1) {
+        await updateRow(SHEETS.sectors, rowIndex, SECTOR_HEADERS, sector)
+      }
+    } catch (err) {
+      setError('Error al actualizar sector: ' + err.message)
+    }
+  }, [])
+
+  // ── DELETE SECTOR ────────────────────────────────────────
+  const deleteSector = useCallback(async (sectorId) => {
+    try {
+      const sectors = await readSheet(SHEETS.sectors)
+      const rowIndex = sectors.findIndex(s => s.id === sectorId)
+      if (rowIndex !== -1) {
+        await clearRow(SHEETS.sectors, rowIndex)
+      }
+    } catch (err) {
+      setError('Error al eliminar sector: ' + err.message)
+    }
+  }, [])
+
+  // ── SAVE IMPROVEMENT ─────────────────────────────────────
+  const saveImprovement = useCallback(async (item) => {
+    try {
+      await appendRow(SHEETS.improvements, IMPROVEMENT_HEADERS, item)
+    } catch (err) {
+      setError('Error al guardar mejora: ' + err.message)
+    }
+  }, [])
+
+  // ── COMPLETE IMPROVEMENT ──────────────────────────────────
+  const completeImprovement = useCallback(async (item) => {
+    try {
+      const improvements = await readSheet(SHEETS.improvements)
+      const rowIndex = improvements.findIndex(i => i.id === item.id)
+      if (rowIndex !== -1) {
+        await updateRow(SHEETS.improvements, rowIndex, IMPROVEMENT_HEADERS, item)
+      }
+    } catch (err) {
+      setError('Error al completar mejora: ' + err.message)
+    }
+  }, [])
+
+  // ── DELETE IMPROVEMENT ────────────────────────────────────
+  const deleteImprovement = useCallback(async (itemId) => {
+    try {
+      const improvements = await readSheet(SHEETS.improvements)
+      const rowIndex = improvements.findIndex(i => i.id === itemId)
+      if (rowIndex !== -1) {
+        await clearRow(SHEETS.improvements, rowIndex)
+      }
+    } catch (err) {
+      setError('Error al eliminar mejora: ' + err.message)
+    }
+  }, [])
+
   return {
     syncing,
     lastSync,
@@ -155,5 +235,11 @@ export function useGoogleSync() {
     saveInventoryItem,
     updateInventoryItem,
     deleteInventoryItem,
+    saveSector,
+    updateSector,
+    deleteSector,
+    saveImprovement,
+    completeImprovement,
+    deleteImprovement,
   }
 }

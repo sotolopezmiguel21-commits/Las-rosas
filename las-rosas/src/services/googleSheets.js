@@ -39,7 +39,7 @@ export const appendRow = async (sheetName, headers, obj) => {
 // ── UPDATE ────────────────────────────────────────────────
 export const updateRow = async (sheetName, rowIndex, headers, obj) => {
   const row = objToRow(headers, obj)
-  const range = `${sheetName}!A${rowIndex + 2}`
+  const range = `'${sheetName}'!A${rowIndex + 2}`
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -50,7 +50,7 @@ export const updateRow = async (sheetName, rowIndex, headers, obj) => {
 
 // ── CLEAR ROW ─────────────────────────────────────────────
 export const clearRow = async (sheetName, rowIndex) => {
-  const range = `${sheetName}!A${rowIndex + 2}:Z${rowIndex + 2}`
+  const range = `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -85,13 +85,6 @@ export const uploadPhotoToDrive = async (base64, filename) => {
   }
 }
 
-// ── INIT ALL SHEETS ───────────────────────────────────────
-export const initAllSheets = async () => {
-  await initSheetHeaders(SHEETS.damages,   DAMAGE_HEADERS)
-  await initSheetHeaders(SHEETS.resolved,  DAMAGE_HEADERS)
-  await initSheetHeaders(SHEETS.inventory, INVENTORY_HEADERS)
-}
-
 // ── TOKEN (no necesario con cuenta de servicio) ───────────
 export const setAccessToken = () => {}
 export const getAccessToken = () => 'service-account'
@@ -111,4 +104,20 @@ export const INVENTORY_HEADERS = [
   'name', 'quantity', 'detail', 'dateCreated',
 ]
 
+export const IMPROVEMENT_HEADERS = [
+  'id', 'sectorId', 'sectorName', 'floor',
+  'description', 'type',
+  'dateCreated', 'dateCompleted', 'status',
+]
+
 import { SHEETS } from '../googleConfig'
+import { SECTOR_HEADERS } from '../data/sectorStore'
+
+// ── INIT ALL SHEETS ───────────────────────────────────────
+export const initAllSheets = async () => {
+  await initSheetHeaders(SHEETS.damages,      DAMAGE_HEADERS)
+  await initSheetHeaders(SHEETS.resolved,     DAMAGE_HEADERS)
+  await initSheetHeaders(SHEETS.inventory,    INVENTORY_HEADERS)
+  await initSheetHeaders(SHEETS.sectors,      SECTOR_HEADERS)
+  await initSheetHeaders(SHEETS.improvements, IMPROVEMENT_HEADERS)
+}
