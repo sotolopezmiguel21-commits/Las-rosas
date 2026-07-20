@@ -1,6 +1,5 @@
 const API = '/api/sheets'
 
-// ── Helpers ───────────────────────────────────────────────
 const rowToObj = (headers, row) => {
   const obj = {}
   headers.forEach((h, i) => { obj[h] = row[i] || '' })
@@ -10,7 +9,6 @@ const rowToObj = (headers, row) => {
 const objToRow = (headers, obj) =>
   headers.map(h => obj[h] ?? '')
 
-// ── READ ──────────────────────────────────────────────────
 export const readSheet = async (sheetName) => {
   const res = await fetch(API, {
     method: 'POST',
@@ -23,7 +21,6 @@ export const readSheet = async (sheetName) => {
   return rows.map(row => rowToObj(headers, row))
 }
 
-// ── APPEND ────────────────────────────────────────────────
 export const appendRow = async (sheetName, headers, obj) => {
   const row = objToRow(headers, obj)
   const res = await fetch(API, {
@@ -36,7 +33,6 @@ export const appendRow = async (sheetName, headers, obj) => {
   return data
 }
 
-// ── UPDATE ────────────────────────────────────────────────
 export const updateRow = async (sheetName, rowIndex, headers, obj) => {
   const row = objToRow(headers, obj)
   const range = `'${sheetName}'!A${rowIndex + 2}`
@@ -48,7 +44,6 @@ export const updateRow = async (sheetName, rowIndex, headers, obj) => {
   return res.json()
 }
 
-// ── CLEAR ROW ─────────────────────────────────────────────
 export const clearRow = async (sheetName, rowIndex) => {
   const range = `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`
   const res = await fetch(API, {
@@ -59,7 +54,6 @@ export const clearRow = async (sheetName, rowIndex) => {
   return res.json()
 }
 
-// ── INIT HEADERS ──────────────────────────────────────────
 export const initSheetHeaders = async (sheetName, headers) => {
   const res = await fetch(API, {
     method: 'POST',
@@ -69,7 +63,6 @@ export const initSheetHeaders = async (sheetName, headers) => {
   return res.json()
 }
 
-// ── UPLOAD PHOTO TO DRIVE ─────────────────────────────────
 export const uploadPhotoToDrive = async (base64, filename) => {
   try {
     const res = await fetch('/api/upload', {
@@ -85,11 +78,16 @@ export const uploadPhotoToDrive = async (base64, filename) => {
   }
 }
 
-// ── TOKEN (no necesario con cuenta de servicio) ───────────
+export const initAllSheets = async () => {
+  await initSheetHeaders(SHEETS.damages,      DAMAGE_HEADERS)
+  await initSheetHeaders(SHEETS.resolved,     DAMAGE_HEADERS)
+  await initSheetHeaders(SHEETS.inventory,    INVENTORY_HEADERS)
+  await initSheetHeaders(SHEETS.improvements, IMPROVEMENT_HEADERS)
+}
+
 export const setAccessToken = () => {}
 export const getAccessToken = () => 'service-account'
 
-// ── SHEET HEADERS CONFIG ──────────────────────────────────
 export const DAMAGE_HEADERS = [
   'id', 'sectorId', 'sectorName', 'floor', 'cell',
   'description', 'solution', 'priority', 'supplies',
@@ -111,13 +109,3 @@ export const IMPROVEMENT_HEADERS = [
 ]
 
 import { SHEETS } from '../googleConfig'
-import { SECTOR_HEADERS } from '../data/sectorStore'
-
-// ── INIT ALL SHEETS ───────────────────────────────────────
-export const initAllSheets = async () => {
-  await initSheetHeaders(SHEETS.damages,      DAMAGE_HEADERS)
-  await initSheetHeaders(SHEETS.resolved,     DAMAGE_HEADERS)
-  await initSheetHeaders(SHEETS.inventory,    INVENTORY_HEADERS)
-  await initSheetHeaders(SHEETS.sectors,      SECTOR_HEADERS)
-  await initSheetHeaders(SHEETS.improvements, IMPROVEMENT_HEADERS)
-}

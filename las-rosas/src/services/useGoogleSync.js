@@ -7,7 +7,6 @@ import {
 import { SHEETS } from '../googleConfig'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
-import { sectorStore, SECTOR_HEADERS } from '../data/sectorStore'
 import { improvementStore } from '../data/improvementStore'
 
 export function useGoogleSync() {
@@ -24,7 +23,7 @@ export function useGoogleSync() {
 
       const activeDamages   = await readSheet(SHEETS.damages)
       const resolvedDamages = await readSheet(SHEETS.resolved)
-      
+
       console.log('Daños activos desde Sheets:', activeDamages)
       console.log('Arreglos desde Sheets:', resolvedDamages)
 
@@ -36,9 +35,6 @@ export function useGoogleSync() {
       const inventory = await readSheet(SHEETS.inventory)
       console.log('Inventario desde Sheets:', inventory)
 
-      const sectors = await readSheet(SHEETS.sectors)
-      console.log('Sectores desde Sheets:', sectors)
-
       const improvements = await readSheet(SHEETS.improvements)
       console.log('Mejoras desde Sheets:', improvements)
 
@@ -46,7 +42,6 @@ export function useGoogleSync() {
       inventoryStore.loadFromSheets(
         inventory.map(i => ({ ...i, quantity: Number(i.quantity) }))
       )
-      sectorStore.loadFromSheets(sectors)
       improvementStore.loadFromSheets(improvements)
 
       setLastSync(new Date())
@@ -154,41 +149,6 @@ export function useGoogleSync() {
     }
   }, [])
 
-  // ── SAVE SECTOR ──────────────────────────────────────────
-  const saveSector = useCallback(async (sector) => {
-    try {
-      await appendRow(SHEETS.sectors, SECTOR_HEADERS, sector)
-    } catch (err) {
-      setError('Error al guardar sector: ' + err.message)
-    }
-  }, [])
-
-  // ── UPDATE SECTOR ────────────────────────────────────────
-  const updateSector = useCallback(async (sector) => {
-    try {
-      const sectors = await readSheet(SHEETS.sectors)
-      const rowIndex = sectors.findIndex(s => s.id === sector.id)
-      if (rowIndex !== -1) {
-        await updateRow(SHEETS.sectors, rowIndex, SECTOR_HEADERS, sector)
-      }
-    } catch (err) {
-      setError('Error al actualizar sector: ' + err.message)
-    }
-  }, [])
-
-  // ── DELETE SECTOR ────────────────────────────────────────
-  const deleteSector = useCallback(async (sectorId) => {
-    try {
-      const sectors = await readSheet(SHEETS.sectors)
-      const rowIndex = sectors.findIndex(s => s.id === sectorId)
-      if (rowIndex !== -1) {
-        await clearRow(SHEETS.sectors, rowIndex)
-      }
-    } catch (err) {
-      setError('Error al eliminar sector: ' + err.message)
-    }
-  }, [])
-
   // ── SAVE IMPROVEMENT ─────────────────────────────────────
   const saveImprovement = useCallback(async (item) => {
     try {
@@ -235,9 +195,6 @@ export function useGoogleSync() {
     saveInventoryItem,
     updateInventoryItem,
     deleteInventoryItem,
-    saveSector,
-    updateSector,
-    deleteSector,
     saveImprovement,
     completeImprovement,
     deleteImprovement,

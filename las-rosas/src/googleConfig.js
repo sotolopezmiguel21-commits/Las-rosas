@@ -12,6 +12,5 @@ export const SHEETS = {
   resolved:     'Arreglos Realizados',
   inventory:    'Inventario',
   config:       'Configuracion',
-  sectors:      'Sectores',
   improvements: 'Mejoras',
 }

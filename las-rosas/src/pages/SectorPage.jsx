@@ -64,9 +64,9 @@ export default function SectorPage({
         background: 'white',
       }}>
         {[
-          { key: 'damages',      label: '⚠️ Daños'      },
-          { key: 'improvements', label: '💡 Mejoras'     },
-          { key: 'inventory',    label: '📦 Inventario'  },
+          { key: 'damages',      label: '⚠️ Daños'     },
+          { key: 'improvements', label: '💡 Mejoras'    },
+          { key: 'inventory',    label: '📦 Inventario' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             flex: 1,
@@ -91,13 +91,9 @@ export default function SectorPage({
 
         {/* Sector info */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          background: '#f5f5f3',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          marginBottom: '14px',
+          display: 'flex', alignItems: 'center', gap: '12px',
+          background: '#f5f5f3', borderRadius: '12px',
+          padding: '12px 14px', marginBottom: '14px',
         }}>
           <span style={{ fontSize: '28px' }}>{type.icon}</span>
           <div>
@@ -123,7 +119,7 @@ export default function SectorPage({
           onCellClick={onCellClick}
         />
 
-        {/* Quick add button + label */}
+        {/* Botón daño general */}
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
@@ -132,7 +128,7 @@ export default function SectorPage({
           margin: '10px 0 6px',
         }}>
           <span style={{ fontSize: '11px', color: '#aaa' }}>
-            Registrar daño sin celda específica
+            Registrar sin celda específica
           </span>
           <button
             onClick={() => onCellClick('General', [])}
@@ -145,9 +141,6 @@ export default function SectorPage({
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
               whiteSpace: 'nowrap',
             }}>
             + Daño general

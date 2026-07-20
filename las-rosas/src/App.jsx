@@ -19,7 +19,6 @@ export default function App() {
     syncing, error,
     loadFromSheets, saveDamage, updateDamage, resolveDamage,
     saveInventoryItem, updateInventoryItem, deleteInventoryItem,
-    saveSector, updateSector, deleteSector,
     saveImprovement, completeImprovement, deleteImprovement,
   } = useGoogleSync()
 
@@ -27,7 +26,6 @@ export default function App() {
     loadFromSheets()
       .then(() => {
         setLoaded(true)
-        // Recuperar vista de formulario si Android recargó
         const formSector = sessionStorage.getItem('form_sector')
         const formCell   = sessionStorage.getItem('form_cell')
         const formFloor  = sessionStorage.getItem('form_floor')
@@ -53,7 +51,6 @@ export default function App() {
       setSelectedDamage(cellDamages[0])
       setView('damage')
     } else {
-      // Guardar estado para recuperar si Android recarga
       sessionStorage.setItem('form_sector', JSON.stringify(selectedSector))
       sessionStorage.setItem('form_floor', selectedFloor)
       sessionStorage.setItem('form_cell', cell)
@@ -61,7 +58,7 @@ export default function App() {
     }
   }
 
-  const isMapArea = ['map', 'sector', 'form', 'damage'].includes(view)
+  const isMapArea = ['map', 'sector', 'form', 'damage', 'edit'].includes(view)
 
   const NAV = [
     { v: 'map',       icon: '🗺',  label: 'Mapa'      },
@@ -72,32 +69,21 @@ export default function App() {
   if (!loaded) {
     return (
       <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100dvh',
-        gap: '16px',
-        background: 'white',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        minHeight: '100dvh', gap: '16px', background: 'white',
       }}>
         <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #eee',
-          borderTop: '3px solid #3B5FCC',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
+          width: '40px', height: '40px',
+          border: '3px solid #eee', borderTop: '3px solid #3B5FCC',
+          borderRadius: '50%', animation: 'spin 0.8s linear infinite',
         }}/>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <div style={{ fontSize: '14px', color: '#888' }}>
-          Cargando datos...
-        </div>
+        <div style={{ fontSize: '14px', color: '#888' }}>Cargando datos...</div>
         {error && (
           <div style={{
-            fontSize: '12px',
-            color: '#E24B4A',
-            textAlign: 'center',
-            padding: '0 32px',
+            fontSize: '12px', color: '#E24B4A',
+            textAlign: 'center', padding: '0 32px',
           }}>{error}</div>
         )}
       </div>
@@ -109,21 +95,13 @@ export default function App() {
 
       {syncing && (
         <div style={{
-          background: '#EEF4FF',
-          color: '#3B5FCC',
-          fontSize: '11px',
-          textAlign: 'center',
-          padding: '4px',
+          background: '#EEF4FF', color: '#3B5FCC',
+          fontSize: '11px', textAlign: 'center', padding: '4px',
         }}>Sincronizando...</div>
       )}
 
       {view === 'map' && (
-        <MapPage
-          onSectorSelect={handleSectorSelect}
-          saveSector={saveSector}
-          updateSector={updateSector}
-          deleteSector={deleteSector}
-        />
+        <MapPage onSectorSelect={handleSectorSelect} />
       )}
 
       {view === 'sector' && selectedSector && (
@@ -195,13 +173,9 @@ export default function App() {
 
       <div style={{
         borderTop: '1px solid #eee',
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '10px 0 12px',
-        background: 'white',
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 10,
+        display: 'flex', justifyContent: 'center',
+        padding: '10px 0 12px', background: 'white',
+        position: 'sticky', bottom: 0, zIndex: 10,
       }}>
         {NAV.map(t => {
           const isActive = t.v === 'map' ? isMapArea : view === t.v
@@ -210,15 +184,9 @@ export default function App() {
               if (t.v === 'map') setSelectedSector(null)
               setView(t.v)
             }} style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-              fontSize: '10px',
+              flex: 1, background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: '2px', fontSize: '10px',
               fontWeight: isActive ? 600 : 400,
               color: isActive ? '#111' : '#aaa',
               padding: '4px 0',
