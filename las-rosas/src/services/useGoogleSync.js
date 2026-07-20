@@ -7,7 +7,7 @@ import {
 import { SHEETS } from '../googleConfig'
 import { damageStore } from '../data/store'
 import { inventoryStore } from '../data/inventoryStore'
-import { improvementStore } from '../data/improvementStore'
+import { improvementStore, IMPROVEMENT_TYPES } from '../data/improvementStore'
 
 export function useGoogleSync() {
   const [syncing, setSyncing] = useState(false)
@@ -158,16 +158,75 @@ export function useGoogleSync() {
     }
   }, [])
 
-  // ── COMPLETE IMPROVEMENT ──────────────────────────────────
-  const completeImprovement = useCallback(async (item) => {
+  // ── COMPLETE IMPROVEMENT (pasa a Arreglos Realizados) ────
+  const completeImprovement = useCallback(async (improvement, photoCompletedUrl) => {
     try {
+      const today = new Date().toISOString().split('T')[0]
+      const typeLabel = IMPROVEMENT_TYPES[improvement.type]?.label || improvement.type
+
+      // 1. Quitar la fila de la hoja Mejoras
       const improvements = await readSheet(SHEETS.improvements)
-      const rowIndex = improvements.findIndex(i => i.id === item.id)
+      const rowIndex = improvements.findIndex(i => i.id === improvement.id)
       if (rowIndex !== -1) {
-        await updateRow(SHEETS.improvements, rowIndex, IMPROVEMENT_HEADERS, item)
+        await clearRow(SHEETS.improvements, rowIndex)
       }
+
+      // 2. Agregarla a Arreglos Realizados con el mismo formato que un daño resuelto
+      const arreglo = {
+        id:                improvement.id,
+        sectorId:          improvement.sectorId,
+        sectorName:        improvement.sectorName,
+        floor:             improvement.floor,
+        cell:              '—',
+        description:       improvement.description,
+        solution:          `Mejora de tipo: ${typeLabel}`,
+        priority:          '',
+        supplies:          '',
+        inventoryItemId:   '',
+        inventoryItemName: '',
+        photo:             improvement.photo || '',
+        photoResolved:     photoCompletedUrl || '',
+        dateCreated:       improvement.dateCreated,
+        dateResolved:      today,
+        status:            'resolved',
+      }
+      await appendRow(SHEETS.resolved, DAMAGE_HEADERS, arreglo)
+
+      // 3. Actualizar stores locales para reflejarlo sin recargar
+      improvementStore.remove(improvement.id)
+      damageStore.add(arreglo)
     } catch (err) {
       setError('Error al completar mejora: ' + err.message)
+    }
+  }, [])
+
+  // ── DISCARD IMPROVEMENT ───────────────────────────────────
+  const discardImprovement = useCallback(async (improvement) => {
+    try {
+      const updated = { ...improvement, status: 'discarded' }
+      const improvements = await readSheet(SHEETS.improvements)
+      const rowIndex = improvements.findIndex(i => i.id === improvement.id)
+      if (rowIndex !== -1) {
+        await updateRow(SHEETS.improvements, rowIndex, IMPROVEMENT_HEADERS, updated)
+      }
+      improvementStore.discard(improvement.id)
+    } catch (err) {
+      setError('Error al descartar mejora: ' + err.message)
+    }
+  }, [])
+
+  // ── REACTIVATE IMPROVEMENT ─────────────────────────────────
+  const reactivateImprovement = useCallback(async (improvement) => {
+    try {
+      const updated = { ...improvement, status: 'active' }
+      const improvements = await readSheet(SHEETS.improvements)
+      const rowIndex = improvements.findIndex(i => i.id === improvement.id)
+      if (rowIndex !== -1) {
+        await updateRow(SHEETS.improvements, rowIndex, IMPROVEMENT_HEADERS, updated)
+      }
+      improvementStore.reactivate(improvement.id)
+    } catch (err) {
+      setError('Error al reactivar mejora: ' + err.message)
     }
   }, [])
 
@@ -198,5 +257,7 @@ export function useGoogleSync() {
     saveImprovement,
     completeImprovement,
     deleteImprovement,
+    discardImprovement,
+    reactivateImprovement,
   }
 }

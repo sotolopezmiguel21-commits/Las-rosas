@@ -1,56 +1,40 @@
-import { useState } from 'react'
-import { INVENTORY_CATEGORIES } from '../data/inventory'
-import { inventoryStore } from '../data/inventoryStore'
+import { useState, useRef } from 'react'
+import { improvementStore, IMPROVEMENT_TYPES } from '../data/improvementStore'
 import { SECTOR_TYPES } from '../data/config'
+import { uploadPhotoToDrive } from '../services/googleSheets'
+import { compressImage } from '../utils/compressImage'
 import Header from '../components/Header'
 
-export default function InventoryFormPage({
-  sector, onBack, onSaved, editItem,
-  saveInventoryItem, updateInventoryItem,
-}) {
-  const isEdit = !!editItem
-  const [step, setStep] = useState(isEdit ? 2 : 1)
-  const [selectedCategory, setSelectedCategory] = useState(
-    isEdit ? editItem.category : null
-  )
-  const [form, setForm] = useState({
-    name:     isEdit ? editItem.name     : '',
-    quantity: isEdit ? editItem.quantity : 1,
-    detail:   isEdit ? editItem.detail   : '',
-  })
+export default function ImprovementFormPage({ sector, onBack, onSaved, saveImprovement }) {
+  const [form, setForm] = useState({ description: '', type: 'funcionalidad', photo: null })
   const [saving, setSaving] = useState(false)
-
+  const fileRef = useRef()
   const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
-  const category = selectedCategory
-    ? INVENTORY_CATEGORIES[selectedCategory]
-    : null
 
   const handleSave = async () => {
-    if (!form.name || form.quantity < 1) return
+    if (!form.description.trim()) return
     setSaving(true)
     try {
-      const data = {
-        sectorId:      sector.id,
-        sectorName:    sector.name,
-        category:      selectedCategory,
-        categoryLabel: category.label,
-        categoryIcon:  category.icon,
-        name:          form.name,
-        quantity:      Number(form.quantity),
-        detail:        form.detail,
-        dateCreated:   isEdit ? editItem.dateCreated : new Date().toISOString().split('T')[0],
+      let photoUrl = null
+      if (form.photo) {
+        const filename = `mejora-${sector.id}-${Date.now()}.jpg`
+        photoUrl = await uploadPhotoToDrive(form.photo, filename)
       }
-      if (isEdit) {
-        inventoryStore.update(editItem.id, data)
-        if (updateInventoryItem) {
-          await updateInventoryItem({ ...data, id: editItem.id })
-        }
-      } else {
-        const id = inventoryStore.add(data)
-        if (saveInventoryItem) {
-          await saveInventoryItem({ ...data, id })
-        }
+
+      const item = {
+        sectorId:       sector.id,
+        sectorName:     sector.name,
+        floor:          sector.floor || '',
+        description:    form.description.trim(),
+        type:           form.type,
+        photo:          photoUrl,
+        photoCompleted: null,
+        dateCreated:    new Date().toISOString().split('T')[0],
+        dateCompleted:  null,
+        status:         'active',
       }
+      const id = improvementStore.add(item)
+      if (saveImprovement) await saveImprovement({ ...item, id })
       onSaved()
     } finally {
       setSaving(false)
@@ -59,224 +43,133 @@ export default function InventoryFormPage({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <Header
-        title={isEdit ? 'Editar elemento' : 'Agregar elemento'}
-        subtitle={`${type.icon} ${sector?.name}`}
-        onBack={step === 2 && !isEdit ? () => setStep(1) : onBack}
-      />
+      <Header title="Nueva mejora" onBack={onBack} />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px' }}>
 
-        {/* STEP 1 — Seleccionar categoría */}
-        {step === 1 && (
-          <div>
-            <div style={{
-              fontSize: '13px',
-              color: '#555',
-              marginBottom: '14px',
-            }}>Selecciona la categoría del elemento</div>
+        {/* Context pill */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          background: '#f5f5f3', border: '1px solid #ddd',
+          borderRadius: '20px', padding: '4px 12px',
+          fontSize: '12px', color: '#555', marginBottom: '16px',
+        }}>
+          <span>{type.icon}</span>
+          <span>{sector?.name}</span>
+        </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '8px',
-            }}>
-              {Object.entries(INVENTORY_CATEGORIES).map(([key, cat]) => (
-                <button key={key} onClick={() => {
-                  setSelectedCategory(key)
-                  setForm({ name: '', quantity: 1, detail: '' })
-                  setStep(2)
-                }} style={{
-                  background: '#f5f5f3',
-                  border: '1px solid #ddd',
-                  borderRadius: '12px',
-                  padding: '14px 12px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
+        {/* Descripción */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{
+            fontSize: '12px', fontWeight: 600, color: '#555', marginBottom: '5px',
+          }}>¿Qué mejora se propone?</div>
+          <textarea
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="Ej: Instalar pasamanos en el pasillo, Pintar habitación..."
+            rows={4}
+            style={{
+              width: '100%', padding: '10px 12px', fontSize: '14px',
+              border: '1px solid #ddd', borderRadius: '10px',
+              background: '#f9f9f7', color: '#111', resize: 'vertical',
+              fontFamily: 'inherit', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {/* Tipo */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{
+            fontSize: '12px', fontWeight: 600, color: '#555', marginBottom: '8px',
+          }}>Tipo de mejora</div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
+          }}>
+            {Object.entries(IMPROVEMENT_TYPES).map(([key, t]) => (
+              <button key={key}
+                onClick={() => setForm(f => ({ ...f, type: key }))}
+                style={{
+                  padding: '12px 10px',
+                  background: form.type === key ? t.bg : '#f5f5f3',
+                  border: form.type === key ? `2px solid ${t.color}` : '1px solid #ddd',
+                  borderRadius: '10px', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', gap: '5px',
                 }}>
-                  <span style={{ fontSize: '22px' }}>{cat.icon}</span>
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: '#333',
-                    lineHeight: 1.3,
-                  }}>{cat.label}</span>
-                </button>
-              ))}
-            </div>
+                <span style={{ fontSize: '22px' }}>{t.icon}</span>
+                <span style={{
+                  fontSize: '12px', fontWeight: 600,
+                  color: form.type === key ? t.text : '#666',
+                }}>{t.label}</span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* STEP 2 — Completar datos */}
-        {step === 2 && category && (
-          <div>
-
-            {/* Category pill */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#f5f5f3',
-              border: '1px solid #ddd',
-              borderRadius: '20px',
-              padding: '4px 12px',
-              fontSize: '12px',
-              color: '#555',
-              marginBottom: '18px',
-            }}>
-              <span>{category.icon}</span>
-              <span>{category.label}</span>
-            </div>
-
-            {/* Element selector */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#555',
-                marginBottom: '8px',
-              }}>Elemento</div>
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '7px',
-              }}>
-                {category.items.map(item => (
-                  <button key={item} onClick={() => setForm(f => ({ ...f, name: item }))}
-                    style={{
-                      padding: '7px 14px',
-                      borderRadius: '20px',
-                      border: form.name === item
-                        ? '2px solid #3B5FCC'
-                        : '1px solid #ddd',
-                      background: form.name === item ? '#EEF4FF' : '#f5f5f3',
-                      color: form.name === item ? '#3B5FCC' : '#444',
-                      fontSize: '13px',
-                      fontWeight: form.name === item ? 600 : 400,
-                      cursor: 'pointer',
-                    }}>{item}</button>
-                ))}
-              </div>
-
-              {/* Custom name if Otro */}
-              {form.name === 'Otro' && (
-                <input
-                  type="text"
-                  placeholder="Describe el elemento..."
+        {/* Photo */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{
+            fontSize: '12px', fontWeight: 600, color: '#555', marginBottom: '6px',
+          }}>Foto del lugar a mejorar <span style={{ fontWeight: 400, color: '#aaa' }}>(opcional)</span></div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={async e => {
+              const file = e.target.files[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = async ev => {
+                const compressed = await compressImage(ev.target.result, 800, 0.5)
+                setForm(f => ({ ...f, photo: compressed }))
+              }
+              reader.readAsDataURL(file)
+            }}
+          />
+          {form.photo
+            ? (
+              <div style={{ position: 'relative' }}>
+                <img src={form.photo} alt="Foto"
                   style={{
-                    marginTop: '10px',
-                    width: '100%',
-                    padding: '10px 12px',
-                    fontSize: '14px',
-                    border: '1px solid #ddd',
-                    borderRadius: '10px',
-                    background: '#f9f9f7',
-                    boxSizing: 'border-box',
-                  }}
-                  onChange={e => setForm(f => ({ ...f, detail: e.target.value }))}
-                />
-              )}
-            </div>
-
-            {/* Quantity */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#555',
-                marginBottom: '8px',
-              }}>Cantidad</div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0',
-                width: 'fit-content',
-                border: '1px solid #ddd',
-                borderRadius: '10px',
-                overflow: 'hidden',
-              }}>
-                <button onClick={() => setForm(f => ({
-                  ...f, quantity: Math.max(1, f.quantity - 1)
-                }))} style={{
-                  width: '44px',
-                  height: '44px',
-                  background: '#f5f5f3',
-                  border: 'none',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  color: '#444',
-                }}>−</button>
-                <div style={{
-                  width: '60px',
-                  textAlign: 'center',
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#111',
-                }}>{form.quantity}</div>
-                <button onClick={() => setForm(f => ({
-                  ...f, quantity: f.quantity + 1
-                }))} style={{
-                  width: '44px',
-                  height: '44px',
-                  background: '#f5f5f3',
-                  border: 'none',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  color: '#444',
-                }}>+</button>
-              </div>
-            </div>
-
-            {/* Detail */}
-            {form.name !== 'Otro' && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#555',
-                  marginBottom: '5px',
-                }}>Detalle <span style={{ fontWeight: 400, color: '#aaa' }}>(opcional)</span></div>
-                <input
-                  type="text"
-                  value={form.detail}
-                  onChange={e => setForm(f => ({ ...f, detail: e.target.value }))}
-                  placeholder='Ej: "marca FV", "LED 9W", "eléctrica"...'
+                    width: '100%', borderRadius: '10px',
+                    maxHeight: '200px', objectFit: 'cover',
+                  }} />
+                <button onClick={() => setForm(f => ({ ...f, photo: null }))}
                   style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    fontSize: '14px',
-                    border: '1px solid #ddd',
-                    borderRadius: '10px',
-                    background: '#f9f9f7',
-                    boxSizing: 'border-box',
-                    fontFamily: 'inherit',
-                  }}
-                />
+                    position: 'absolute', top: '8px', right: '8px',
+                    background: 'rgba(0,0,0,0.6)', color: 'white',
+                    border: 'none', borderRadius: '50%',
+                    width: '28px', height: '28px',
+                    cursor: 'pointer', fontSize: '15px',
+                  }}>×</button>
               </div>
-            )}
+            ) : (
+              <button onClick={() => fileRef.current?.click()} style={{
+                width: '100%', padding: '14px',
+                border: '1px dashed #ccc', borderRadius: '10px',
+                background: '#f9f9f7', cursor: 'pointer',
+                fontSize: '13px', color: '#888',
+              }}>📷 Tomar o seleccionar foto</button>
+            )
+          }
+        </div>
 
-            {/* Save button */}
-            <button onClick={handleSave}
-              disabled={!form.name || form.quantity < 1 || saving}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: form.name && !saving ? '#3B5FCC' : '#eee',
-                color: form.name && !saving ? 'white' : '#aaa',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '15px',
-                fontWeight: 600,
-                cursor: form.name && !saving ? 'pointer' : 'default',
-              }}>
-              {saving ? '⏳ Guardando...' : (isEdit ? 'Guardar cambios' : 'Agregar elemento')}
-            </button>
+        {/* Save */}
+        <button onClick={handleSave}
+          disabled={!form.description.trim() || saving}
+          style={{
+            width: '100%', padding: '14px',
+            background: form.description.trim() && !saving ? '#9333EA' : '#eee',
+            color: form.description.trim() && !saving ? 'white' : '#aaa',
+            border: 'none', borderRadius: '12px',
+            fontSize: '15px', fontWeight: 600,
+            cursor: form.description.trim() && !saving ? 'pointer' : 'default',
+          }}>
+          {saving ? '⏳ Guardando...' : 'Registrar mejora'}
+        </button>
 
-          </div>
-        )}
       </div>
     </div>
   )

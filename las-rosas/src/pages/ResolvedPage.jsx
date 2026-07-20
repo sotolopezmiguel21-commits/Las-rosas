@@ -54,7 +54,9 @@ export default function ResolvedPage({ onBack }) {
             .map(d => {
               const sector = getSectorById(d.sectorId)
               const type = SECTOR_TYPES[sector?.type] || { icon: '📍' }
-              const p = PRIORITY[d.priority]
+              const fromImprovement = d.id?.startsWith('M')
+              const p = PRIORITY[d.priority] || { label: 'Mejora', text: '#6B21A8', bg: '#F5F0FF' }
+              const hasCell = d.cell && d.cell !== '—'
               const isExpanded = expandedId === d.id
 
               return (
@@ -86,7 +88,7 @@ export default function ResolvedPage({ onBack }) {
                         fontSize: '11px',
                         color: '#888',
                       }}>
-                        {type.icon} {sector?.name} · Celda {d.cell}
+                        {type.icon} {sector?.name}{hasCell ? ` · Celda ${d.cell}` : ''}{fromImprovement ? ' · 💡 Mejora' : ''}
                       </div>
                     </div>
                     <div style={{
@@ -135,7 +137,7 @@ export default function ResolvedPage({ onBack }) {
                       background: p.bg,
                       borderRadius: '6px',
                       padding: '2px 8px',
-                    }}>Prioridad {p.label}</span>
+                    }}>{fromImprovement ? '💡 Mejora completada' : `Prioridad ${p.label}`}</span>
                   </div>
 
                   {/* Expanded details */}

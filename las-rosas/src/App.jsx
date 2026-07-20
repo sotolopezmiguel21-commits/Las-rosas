@@ -20,6 +20,7 @@ export default function App() {
     loadFromSheets, saveDamage, updateDamage, resolveDamage,
     saveInventoryItem, updateInventoryItem, deleteInventoryItem,
     saveImprovement, completeImprovement, deleteImprovement,
+    discardImprovement, reactivateImprovement,
   } = useGoogleSync()
 
   useEffect(() => {
@@ -116,6 +117,8 @@ export default function App() {
           saveImprovement={saveImprovement}
           completeImprovement={completeImprovement}
           deleteImprovement={deleteImprovement}
+          discardImprovement={discardImprovement}
+          reactivateImprovement={reactivateImprovement}
         />
       )}
 

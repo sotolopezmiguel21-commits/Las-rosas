@@ -104,7 +104,7 @@ export const INVENTORY_HEADERS = [
 
 export const IMPROVEMENT_HEADERS = [
   'id', 'sectorId', 'sectorName', 'floor',
-  'description', 'type',
+  'description', 'type', 'photo', 'photoCompleted',
   'dateCreated', 'dateCompleted', 'status',
 ]
 

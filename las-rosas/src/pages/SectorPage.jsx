@@ -11,6 +11,7 @@ export default function SectorPage({
   sector, floor, onBack, onCellClick,
   saveInventoryItem, updateInventoryItem, deleteInventoryItem,
   saveImprovement, completeImprovement, deleteImprovement,
+  discardImprovement, reactivateImprovement,
 }) {
   const [damages, setDamages] = useState(damageStore.getAll())
   const [tab, setTab] = useState('damages')
@@ -45,6 +46,8 @@ export default function SectorPage({
         saveImprovement={saveImprovement}
         completeImprovement={completeImprovement}
         deleteImprovement={deleteImprovement}
+        discardImprovement={discardImprovement}
+        reactivateImprovement={reactivateImprovement}
       />
     )
   }

@@ -38,10 +38,16 @@ export const improvementStore = {
     notify()
   },
 
-  complete: (id) => {
-    const today = new Date().toISOString().split('T')[0]
+  discard: (id) => {
     _improvements = _improvements.map(i =>
-      i.id === id ? { ...i, status: 'done', dateCompleted: today } : i
+      i.id === id ? { ...i, status: 'discarded' } : i
+    )
+    notify()
+  },
+
+  reactivate: (id) => {
+    _improvements = _improvements.map(i =>
+      i.id === id ? { ...i, status: 'active' } : i
     )
     notify()
   },
@@ -61,7 +67,7 @@ export const IMPROVEMENT_TYPES = {
 
 export const IMPROVEMENT_HEADERS = [
   'id', 'sectorId', 'sectorName', 'floor',
-  'description', 'type',
+  'description', 'type', 'photo', 'photoCompleted',
   'dateCreated', 'dateCompleted', 'status',
 ]
 
